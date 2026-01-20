@@ -13,24 +13,23 @@ const moduleCache = new NodeCache({ stdTTL: 300 });
 
 /*⭑⭒━━━✦❘༻☾⋆⁺₊✧ 𝓿𝓪𝓻𝓮𝓫𝓸𝓽 ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
 
-global.sam = ['393476686131',]
+global.luxifer = ['212781816909',]
 global.owner = [
-  ['393476686131', 'sam', true],
-  ['393511082922', 'gio', true],
-  ['393392645292', 'mavko', true],
-  ['67078163216', 'Felix', true],
-  ['393514357738', 'vare', true],
+  ['212781816909', 'luxifer', true],
+  ['390935931875 ', 'tom', true],
+  ['1(609)3013226', 'mrciao', true],
+  ['393291966445', 'gioia', true],
 ]
-global.mods = ['393476686131', '393511082922', '67078163216']
-global.prems = ['393476686131', '393511082922', '67078163216']
+global.mods = ['212781816909', '390935931875', '1(609)3013226']
+global.prems = ['212781816909', '390935931875', '1(609)3013226']
 
 /*⭑⭒━━━✦❘༻🩸 INFO BOT 🕊️༺❘✦━━━⭒⭑*/
 
-global.nomepack = 'vare ✧ bot'
-global.nomebot = '✧˚🩸 varebot 🕊️˚✧'
-global.wm = 'vare ✧ bot'
-global.autore = '𝐬𝐚𝐦'
-global.dev = '⋆｡˚- 𝐬𝐚𝐦'
+global.nomepack = 'danger ✧ bot'
+global.nomebot = '✧˚🩸 dangerbot 🕊️˚✧'
+global.wm = 'danger ✧ bot'
+global.autore = 'luxifer'
+global.dev = '⋆｡˚- luxifer'
 global.testobot = `༻⋆⁺₊𝓿𝓪𝓻𝓮𝓫𝓸𝓽₊⁺⋆༺`
 global.versione = pkg.version
 global.errore = '⚠️ *Errore inatteso!* Usa il comando `.segnala _errore_` per avvisare lo sviluppatore.'
