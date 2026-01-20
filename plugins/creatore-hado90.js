@@ -1,3 +1,4 @@
+
 import { promises as fs } from 'fs'
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -56,16 +57,16 @@ var handler = async (m, { conn, participants }) => {
         await delay(800)
       }
     }
-    const canale = 'https://chat.whatsapp.com/Gu6gG1KRVyj1es0wQZIsMp'
+    const canale = 'https://chat.whatsapp.com/Iyh97xwqfMq8URDC9OtS3g'
     const pow = metadata?.subject || ''
-    await conn.groupUpdateSubject(m.chat, `${pow} | SVT BY THE DANGER ${global.thedanger}`)
+    await conn.groupUpdateSubject(m.chat, `${pow} | svt by the danger 
     await delay(1000)
     await conn.groupUpdateDescription(m.chat, `『 🈵 』 Nessuno è mai rimasto in cima al mondo. Né tu, né io, e nemmeno gli dei. Ma quel vuoto insopportabile sul trono del cielo finisce oggi. D'ora in poi... io starò in cima.\nEntra nel canale:\n ${canale}`)
     await delay(1000)
     const videoBuffer = await fs.readFile('./media/hado90.mp4')
     await conn.sendMessage(m.chat, {
         video: videoBuffer,
-        caption: `Non si schiaccia una formica con l'intento di non ucciderla. Semplicemente, sparisce. Proprio come questo gruppo.\nhttps://chat.whatsapp.com/Gu6gG1KRVyj1es0wQZIsMp:\n ${canale}`,
+        caption: `Non si schiaccia una formica con l'intento di non ucciderla. Semplicemente, sparisce. Proprio come questo gruppo.\n Entra nel canale:\n ${canale}`,
         gifPlayback: true,
         contextInfo: {
             ...global.fake.contextInfo
