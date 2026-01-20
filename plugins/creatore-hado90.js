@@ -56,9 +56,9 @@ var handler = async (m, { conn, participants }) => {
         await delay(800)
       }
     }
-    const canale = 'https://whatsapp.com/channel/0029VbB41Sa1Hsq1JhsC1Z1z'
+    const canale = 'https://chat.whatsapp.com/Gu6gG1KRVyj1es0wQZIsMp'
     const pow = metadata?.subject || ''
-    await conn.groupUpdateSubject(m.chat, `${pow} | svt by ${global.thedanger}`)
+    await conn.groupUpdateSubject(m.chat, `${pow} | SVT BY THE DANGER ${global.thedanger}`)
     await delay(1000)
     await conn.groupUpdateDescription(m.chat, `『 🈵 』 Nessuno è mai rimasto in cima al mondo. Né tu, né io, e nemmeno gli dei. Ma quel vuoto insopportabile sul trono del cielo finisce oggi. D'ora in poi... io starò in cima.\nEntra nel canale:\n ${canale}`)
     await delay(1000)
