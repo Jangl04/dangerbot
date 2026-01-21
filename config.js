@@ -20,16 +20,16 @@ global.owner = [
   ['16093013226', 'mrciao', true],
   ['393291966445', 'gioia', true],
 ]
-global.mods = ['212781816909', '390935931875', '1(609)3013226']
-global.prems = ['212781816909', '390935931875', '1(609)3013226']
+global.mods = ['212781816909', '390935931875', '16093013226']
+global.prems = ['212781816909', '390935931875', '16093013226']
 
 /*⭑⭒━━━✦❘༻🩸 INFO BOT 🕊️༺❘✦━━━⭒⭑*/
 
 global.nomepack = 'danger ✧ bot'
 global.nomebot = '✧˚🩸 dangerbot 🕊️˚✧'
 global.wm = 'danger ✧ bot'
-global.autore = 'luxifer'
-global.dev = '⋆｡˚- luxifer'
+global.autore = 'Luxifer'
+global.dev = '⋆｡˚- Luxifer'
 global.testobot = `༻⋆⁺₊dangerbot₊⁺⋆༺`
 global.versione = pkg.version
 global.errore = '⚠️ *Errore inatteso!* Usa il comando `.segnala _errore_` per avvisare lo sviluppatore.'
