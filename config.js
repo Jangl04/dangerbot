@@ -26,7 +26,7 @@ global.prems = ['212781816909', '390935931875', '16093013226']
 /*⭑⭒━━━✦❘༻🩸 INFO BOT 🕊️༺❘✦━━━⭒⭑*/
 
 global.nomepack = 'thedanger'
-global.nomebot = '✧˚🩸 thedanger 🕊️˚✧'
+global.nomebot = '✧˚✧'
 global.wm = 'danger ✧ bot'
 global.autore = 'Luxifer'
 global.dev = '⋆｡˚- Luxifer'
