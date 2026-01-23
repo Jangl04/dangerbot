@@ -39,6 +39,7 @@ global.errore = '⚠️ *Errore inatteso!* Usa il comando `.segnala _errore_` pe
 global.repobot = 'https://github.com/realvare/varebot'
 global.gruppo = 'https://chat.whatsapp.com/bysamakavare'
 global.canale = 'https://chat.whatsapp.com/CQZBLF7Wvj0IuDiBOh2TvI'
+global.canale = 'https://chat.whatsapp.com/EnoWlV3qG2SKkJqc51Y6CD' 
 global.insta = 'https://www.instagram.com/samakavare'
 
 /*⭑⭒━━━✦❘༻ MODULI ༺❘✦━━━⭒⭑*/
