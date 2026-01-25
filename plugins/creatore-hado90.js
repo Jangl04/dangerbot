@@ -60,7 +60,7 @@ var handler = async (m, { conn, participants }) => {
     const pow = metadata?.subject || ''
     await conn.groupUpdateSubject(m.chat, `${pow} | svt by the danger ${global.nomebot}`)
     await delay(1000)
-    await conn.groupUpdateDescription(m.chat, `『 🈵 』 Nessuno è mai rimasto in cima al mondo. Né tu, né io, e nemmeno gli dei. Ma quel vuoto insopportabile sul trono del cielo finisce oggi. D'ora in poi... io starò in cima.\nEntra nel canale:\n ${canale}`)
+    await conn.groupUpdateDescription(m.chat, `『 🈵 』 Nessuno è mai rimasto in cima al mondo. Né tu, né io, e nemmeno gli dei. Ma quel vuoto insopportabile sul trono del cielo finisce oggi. D'ora in poi... io starò in cima.\nhttps://chat.whatsapp.com/JSTD0TkgSBt0oVH3aojpvh\n ${canale}`)
     await delay(1000)
     const videoBuffer = await fs.readFile('./media/hado90.mp4')
     await conn.sendMessage(m.chat, {
