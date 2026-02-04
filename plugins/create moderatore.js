@@ -1,4 +1,4 @@
-// plugins/mod.js — Gestione Moderatori (JID normalizzato, salva su global.db)
+ // plugins/mod.js — Gestione Moderatori (JID normalizzato, salva su global.db)
 
 const BOT_OWNERS = [
   '212781816909@s.whatsapp.net', // TU
@@ -92,4 +92,6 @@ handler.command = /^mod$/i;
 handler.group = true;
 
 export default handler;
+
+
 
