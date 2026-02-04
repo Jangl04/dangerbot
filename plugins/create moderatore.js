@@ -46,7 +46,8 @@ function isOwner(jid) {
 
 function isMod(chatId, jid) {
   const mods = getMods(chatId);
-  return mods.has(jid) || isOwner(jid);
+  return mods.has(jid); // ⛔ owner NON è un moderatore
+
 }
 
 // =====================
