@@ -1,52 +1,59 @@
-// ====== OWNER ======
+// plugins/gp-hidetag.js — tag/hidetag/totag per Admin + Moderatori + Owner
+
 const BOT_OWNERS = [
-  '212781816909@s.whatsapp.net',
-  '390935931875@s.whatsapp.net',
+  '212781816909@s.whatsapp.net', // TU
+  '390935931875@s.whatsapp.net', // TOM
 ];
 
 function isOwner(jid) {
   return BOT_OWNERS.includes(jid);
 }
 
-// ====== MOD STORE UNIFICATO ======
-if (!global.__modsStore) global.__modsStore = new Map(); // chatId -> Set(jid)
-
-function normJid(conn, jid) {
-  return conn.decodeJid(jid);
+function ensureDB(chatId) {
+  if (!global.db) global.db = { data: { chats: {} } };
+  if (!global.db.data) global.db.data = { chats: {} };
+  if (!global.db.data.chats) global.db.data.chats = {};
+  if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {};
+  if (!Array.isArray(global.db.data.chats[chatId].mods)) global.db.data.chats[chatId].mods = [];
+  return global.db.data.chats[chatId];
 }
 
-function getMods(conn, chatId) {
-  // 1) DB
-  const dbMods = global.db?.data?.chats?.[chatId]?.mods;
-  if (Array.isArray(dbMods)) return new Set(dbMods.map(j => normJid(conn, j)));
+// Normalizza sempre a "numero@s.whatsapp.net"
+function cleanJid(conn, jid) {
+  const dj = conn.decodeJid(jid);
+  if (dj.includes('@')) return dj.replace(/[^\d@]/g, '');
+  const num = String(dj).replace(/[^\d]/g, '');
+  return num ? `${num}@s.whatsapp.net` : dj;
+}
 
-  // 2) fallback globale
-  if (!global.__modsStore.has(chatId)) global.__modsStore.set(chatId, new Set());
-  return global.__modsStore.get(chatId);
+async function isGroupAdmin(conn, chatId, jid) {
+  try {
+    const meta = await conn.groupMetadata(chatId);
+    const sender = cleanJid(conn, jid);
+    const p = meta.participants.find(x => cleanJid(conn, x.id) === sender);
+    return !!p?.admin;
+  } catch {
+    return false;
+  }
 }
 
 function isMod(conn, chatId, jid) {
-  const mods = getMods(conn, chatId);
-  return mods.has(normJid(conn, jid));
+  const chat = ensureDB(chatId);
+  const modsSet = new Set(chat.mods.map(j => cleanJid(conn, j)));
+  return modsSet.has(cleanJid(conn, jid));
 }
 
-// ====== COMMAND ======
 const handler = async (m, { conn, text, participants }) => {
   try {
-    // ✅ Permessi: owner OR admin OR moderatore
-    let isAdmin = false;
-    try {
-      const meta = await conn.groupMetadata(m.chat);
-      const sender = normJid(conn, m.sender);
-      const p = meta.participants.find(x => normJid(conn, x.id) === sender);
-      isAdmin = !!p?.admin;
-    } catch {}
+    // ✅ Permessi: Owner OR Admin WA OR Moderatore bot
+    const sender = cleanJid(conn, m.sender);
+    const admin = await isGroupAdmin(conn, m.chat, sender);
 
-    if (!isOwner(normJid(conn, m.sender)) && !isAdmin && !isMod(conn, m.chat, m.sender)) {
-      return m.reply('🚫 *Solo admin o moderatori possono usare questo comando*');
+    if (!isOwner(sender) && !admin && !isMod(conn, m.chat, sender)) {
+      return m.reply('🚫 Solo admin o moderatori possono usare questo comando');
     }
 
-    const users = participants.map(u => normJid(conn, u.id));
+    const users = participants.map(u => cleanJid(conn, u.id));
 
     if (m.quoted) {
       const quoted = m.quoted;
@@ -98,6 +105,7 @@ handler.help = ['hidetag', 'totag', 'tag'];
 handler.tags = ['gruppo'];
 handler.command = /^(\.?hidetag|totag|tag)$/i;
 handler.group = true;
-// ❌ NON mettere handler.admin=true
+// ❌ NON mettere handler.admin = true
 
 export default handler;
+
