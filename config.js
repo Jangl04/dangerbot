@@ -1,3 +1,5 @@
+process.env.GOOGLE_VISION_API_KEY = 'AIzaSyA-29qOJ8v3288jpZSYhFLJqe9VFUfCyPY'
+
 import { watchFile, unwatchFile } from 'fs'
 import { fileURLToPath, pathToFileURL } from 'url'
 import chalk from 'chalk'
