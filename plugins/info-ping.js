@@ -12,6 +12,7 @@ let handler = async (m, { conn }) => {
 
 ✦ 『🔌』 \`Attivo da:\` *${uptime}*
 ✧ 『✈️』 \`Latenza:\` *${latensi}* *ms*
+╰⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒
 `.trim(), m,)
 }
 
