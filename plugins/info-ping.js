@@ -9,6 +9,8 @@ let handler = async (m, { conn }) => {
   let uptime = formatUptime(process.uptime() * 1000)
 
   await conn.reply(m.chat, `『🏓 \`PONG\` 』
+
+
 ✦ 『🔌』 \`Attivo da:\` *${uptime}*
 ✧ 『✈️』 \`Latenza:\` *${latensi}* *ms*
 `.trim(), m,)
