@@ -11,7 +11,7 @@ let handler = async (m, { conn }) => {
   await conn.reply(m.chat, `『🏓 \`PONG\` 』
 ✦ 『🔌』 \`Attivo da:\` *${uptime}*
 ✧ 『✈️』 \`Latenza:\` *${latensi}* *ms*
-`.trim(), m, { ...global.rcanal })
+`.trim(), m,)
 }
 
 handler.help = ['ping']
