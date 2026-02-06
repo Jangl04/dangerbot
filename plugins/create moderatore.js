@@ -1,5 +1,4 @@
 const handler = async (m, { conn, command, usedPrefix }) => {
-  // 1) Prendo il target: prima menzione, altrimenti autore del messaggio a cui stai rispondendo
   const target =
     (m.mentionedJid && m.mentionedJid[0]) ||
     (m.quoted && (m.quoted.sender || m.quoted.participant));
@@ -10,20 +9,38 @@ const handler = async (m, { conn, command, usedPrefix }) => {
     );
   }
 
-  // 2) Chi comanda (tu)
   const sender = m.sender;
 
-  // 3) Nomi "carini": se il bot ha getName, usalo, altrimenti fallback sul numero
-  const senderName = conn.getName ? await conn.getName(sender) : sender.split("@")[0];
-  const targetName = conn.getName ? await conn.getName(target) : target.split("@")[0];
+  const senderName = conn.getName
+    ? await conn.getName(sender)
+    : sender.split("@")[0];
 
-  // 4) Messaggio finale
+  const targetName = conn.getName
+    ? await conn.getName(target)
+    : target.split("@")[0];
+
   const text = `😘 *${senderName}* bacia *${targetName}* 💋`;
 
-  // 5) Taggo entrambi così WhatsApp mostra le menzioni
+  // 👉 GIF bacio (puoi cambiarla quando vuoi)
+  const kissGif = "https://media.tenor.com/6oKZK6a0x7AAAAAC/anime-kiss.gif";
+
+  // 1️⃣ Mando lo sticker
   await conn.sendMessage(
     m.chat,
-    { text, mentions: [sender, target] },
+    {
+      sticker: { url: kissGif },
+      mentions: [sender, target],
+    },
+    { quoted: m }
+  );
+
+  // 2️⃣ Mando il messaggio testuale
+  await conn.sendMessage(
+    m.chat,
+    {
+      text,
+      mentions: [sender, target],
+    },
     { quoted: m }
   );
 };
@@ -33,6 +50,7 @@ handler.tags = ["fun"];
 handler.command = /^bacia$/i;
 
 export default handler;
+
 
 
 
