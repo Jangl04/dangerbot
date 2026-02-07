@@ -2,7 +2,7 @@ console.log("✅ [NUKE] plugin caricato");
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
-let handler = async (m, { conn }) => {
+const handler = async (m, { conn }) => {
   if (!m.isGroup) return m.reply("☢️ Solo nei gruppi.");
 
   let members = [];
@@ -44,7 +44,8 @@ handler.tags = ["fun"];
 handler.command = ["nuke"];
 handler.group = true;
 
-module.exports = handler;
+export default handler;
+
 
 
 
