@@ -30,7 +30,7 @@ const handler = async (m, { conn, command, usedPrefix }) => {
   }
 
   // testo (non esplicito)
-  const text = `😳 *${senderName}* scopa *${targetName}* 🔥`;
+  const text = `😳 *${senderName}* sta scopando a pecora *${targetName}* 🔥`;
 
   await conn.sendMessage(
     m.chat,
