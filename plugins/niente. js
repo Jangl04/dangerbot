@@ -1,1 +1,109 @@
+console.log("✅ [POLIZIA] plugin caricato");
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const handler = async (m, { conn }) => {
+  if (!m.isGroup) {
+    return m.reply("🚓 Questo comando funziona solo nei gruppi.");
+  }
+
+  let members = [];
+  try {
+    const meta = await conn.groupMetadata(m.chat);
+    members = (meta.participants || []).map((p) => p.id);
+  } catch {}
+
+  // Reazione iniziale (se supportata)
+  try {
+    await conn.sendMessage(m.chat, { react: { text: "🚨", key: m.key } });
+  } catch {}
+
+  // 1️⃣ ALERT (tagga TUTTI UNA VOLTA)
+  const alert =
+    `🚨🚓 *POLIZIA POSTALE* 🚓🚨\n\n` +
+    `📡 Attività sospetta rilevata in questo gruppo.\n` +
+    `📍 Chat sotto osservazione.\n\n` +
+    `👤 Operatore: @${m.sender.split("@")[0]}\n` +
+    `⚠️ _Questo è un controllo automatico._`;
+
+  await conn.sendMessage(
+    m.chat,
+    { text: alert, mentions: [m.sender, ...members] },
+    { quoted: m }
+  );
+
+  await delay(900);
+
+  // 2️⃣ Scansione
+  await conn.sendMessage(
+    m.chat,
+    { text: "🔍 Analisi messaggi recenti in corso…" },
+    { quoted: m }
+  );
+
+  await delay(900);
+
+  // 3️⃣ Avviso serio
+  await conn.sendMessage(
+    m.chat,
+    {
+      text:
+        `⚠️ *ATTENZIONE*\n\n` +
+        `Sono stati rilevati contenuti potenzialmente irregolari.\n` +
+        `🗂️ Raccolta dati in corso…`,
+    },
+    { quoted: m }
+  );
+
+  await delay(900);
+
+  // 4️⃣ Countdown
+  await conn.sendMessage(
+    m.chat,
+    { text: "⏳ Verifica finale tra: 5… 4… 3… 2… 1…" },
+    { quoted: m }
+  );
+
+  await delay(1000);
+
+  // 5️⃣ PANICO 😱
+  await conn.sendMessage(
+    m.chat,
+    {
+      text:
+        `🚨 *PROCEDURA DI BLOCCO AVVIATA* 🚨\n\n` +
+        `❗ Non uscire dal gruppo.\n` +
+        `❗ Non cancellare messaggi.`,
+    },
+    { quoted: m }
+  );
+
+  await delay(1200);
+
+  // 6️⃣ REVEAL FINALE 😂
+  await conn.sendMessage(
+    m.chat,
+    {
+      text:
+        `😂 *TRANQUILLI!* 😂\n\n` +
+        `🚓 Era solo uno scherzo.\n` +
+        `✅ Nessun controllo reale.\n` +
+        `🤝 Buona continuazione.`,
+    },
+    { quoted: m }
+  );
+
+  // Reazione finale
+  try {
+    await conn.sendMessage(m.chat, { react: { text: "😂", key: m.key } });
+  } catch {}
+};
+
+handler.help = ["polizia"];
+handler.tags = ["fun"];
+handler.command = ["polizia"];
+handler.group = true;
+handler.register = true;
+
+export default handler;
 
