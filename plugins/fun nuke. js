@@ -1,0 +1,98 @@
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const handler = async (m, { conn }) => {
+  if (!m.isGroup) return m.reply("☢️ Questo comando funziona solo nei gruppi.");
+
+  // prendo tutti i membri per menzioni (una volta sola)
+  let participants = [];
+  try {
+    const meta = await conn.groupMetadata(m.chat);
+    participants = (meta.participants || []).map((p) => p.id);
+  } catch {
+    participants = [];
+  }
+
+  // reazione al comando
+  try {
+    await conn.sendMessage(m.chat, { react: { text: "☢️", key: m.key } });
+  } catch {}
+
+  // 1) ALERT (tagga tutti UNA VOLTA)
+  const alertText =
+    `🚨🚨 *ALLARME NUCLEARE* 🚨🚨\n` +
+    `☢️ Protocollo *NUKE* attivato da @${m.sender.split("@")[0]}\n\n` +
+    `📡 *Target:* questo gruppo\n` +
+    `🧨 *Stato:* ARMAMENTO...\n\n` +
+    `⚠️ _Scherzo in arrivo. Nessuno verrà kickato o nukato davvero._`;
+
+  await conn.sendMessage(
+    m.chat,
+    { text: alertText, mentions: [m.sender, ...participants] },
+    { quoted: m }
+  );
+
+  await sleep(900);
+
+  // 2) “sirena” scenica
+  await conn.sendMessage(
+    m.chat,
+    { text: "🚨 WEE-OOO WEE-OOO 🚨  _Evacuazione immediata!_" },
+    { quoted: m }
+  );
+
+  await sleep(900);
+
+  // 3) progress “serio”
+  await conn.sendMessage(
+    m.chat,
+    {
+      text:
+        `🛰️ *Allineamento satelliti:* [██████░░░░] 60%\n` +
+        `🔐 *Bypass firewall:* [████████░░] 80%\n` +
+        `💣 *Armamento testata:* [█████████░] 90%`,
+    },
+    { quoted: m }
+  );
+
+  await sleep(900);
+
+  // 4) countdown (un solo messaggio)
+  await conn.sendMessage(
+    m.chat,
+    { text: "⏳ *COUNTDOWN* → 5… 4… 3… 2… 1…" },
+    { quoted: m }
+  );
+
+  await sleep(700);
+
+  // 5) “boom” finto + panico
+  await conn.sendMessage(
+    m.chat,
+    { text: "💥💥💥 *BOOOOOOM!* 💥💥💥\n😱 TUTTI A TERRA!!!" },
+    { quoted: m }
+  );
+
+  await sleep(900);
+
+  // 6) reveal: era uno scherzo + reaction finale
+  await conn.sendMessage(
+    m.chat,
+    {
+      text:
+        `✅ *FALSO ALLARME* ✅\n` +
+        `😄 Tranquilli, era solo uno scherzo.\n` +
+        `🧯 Il gruppo è al sicuro (nessuna azione reale eseguita).`,
+    },
+    { quoted: m }
+  );
+
+  try {
+    await conn.sendMessage(m.chat, { react: { text: "😂", key: m.key } });
+  } catch {}
+};
+
+handler.help = ["nuke"];
+handler.tags = ["fun"];
+handler.command = /^nuke$/i;
+
+export default handler;
