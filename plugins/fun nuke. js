@@ -1,27 +1,20 @@
+console.log("✅ [NUKE] plugin caricato");
+
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const handler = async (m, { conn }) => {
+let handler = async (m, { conn }) => {
   if (!m.isGroup) return m.reply("☢️ Solo nei gruppi.");
 
   let members = [];
   try {
     const meta = await conn.groupMetadata(m.chat);
     members = (meta.participants || []).map((p) => p.id);
-  } catch {
-    members = [];
-  }
-
-  // prova reaction al comando (se supportata)
-  try {
-    await conn.sendMessage(m.chat, { react: { text: "🚨", key: m.key } });
   } catch {}
 
-  // TAG UNA VOLTA SOLA
   const starter =
     `🚨 *EMERGENCY BROADCAST* 🚨\n` +
     `☢️ Modalità *NUKE* attivata!\n` +
-    `👤 Da: @${m.sender.split("@")[0]}\n\n` +
-    `📍 Location: ${m.chat.includes("@g.us") ? "Gruppo" : "Chat"}\n` +
+    `👤 Da: @${m.sender.split("@")[0]}\n` +
     `⚠️ _Scherzo: nessuna azione reale verrà eseguita._`;
 
   await conn.sendMessage(
@@ -30,65 +23,28 @@ const handler = async (m, { conn }) => {
     { quoted: m }
   );
 
-  await delay(800);
-
-  // sequenza “spavento”
-  const seq = [
-    "📡 Connessione al satellite… ✅",
-    "🧨 Caricamento codici… ✅",
-    "🔐 Autorizzazione: *APPROVATA* ✅",
-    "💣 Armamento testata… ✅",
-    "🛰️ Target lock… ✅",
-  ];
-
-  for (const s of seq) {
-    await conn.sendMessage(m.chat, { text: s }, { quoted: m });
-    await delay(650);
-  }
-
-  // countdown (1 messaggio)
-  await delay(650);
-  await conn.sendMessage(
-    m.chat,
-    { text: "⏳ *COUNTDOWN* → 5️⃣ 4️⃣ 3️⃣ 2️⃣ 1️⃣" },
-    { quoted: m }
-  );
-
+  await delay(700);
+  await conn.sendMessage(m.chat, { text: "📡 Connessione al satellite… ✅" }, { quoted: m });
+  await delay(700);
+  await conn.sendMessage(m.chat, { text: "💣 Armamento testata… ✅" }, { quoted: m });
+  await delay(700);
+  await conn.sendMessage(m.chat, { text: "⏳ *COUNTDOWN* → 5 4 3 2 1" }, { quoted: m });
   await delay(900);
-
-  // finto impatto
-  await conn.sendMessage(
-    m.chat,
-    { text: "💥💥💥 *IMPACTO RILEVATO!* 💥💥💥\n😱 RIPETO: IMPACTO RILEVATO!" },
-    { quoted: m }
-  );
-
+  await conn.sendMessage(m.chat, { text: "💥💥💥 *BOOOM!* 😱" }, { quoted: m });
   await delay(900);
-
-  // reveal finale
   await conn.sendMessage(
     m.chat,
-    {
-      text:
-        `✅ *FINE SIMULAZIONE* ✅\n` +
-        `😂 Era uno scherzo!\n` +
-        `🧯 Nessun kick, nessuna chiusura, nessun nuke.\n` +
-        `🤝 Pace e amore (quasi).`,
-    },
+    { text: "✅ *FINE SIMULAZIONE* ✅\n😂 Era uno scherzo. Nessun nuke reale." },
     { quoted: m }
   );
-
-  try {
-    await conn.sendMessage(m.chat, { react: { text: "😂", key: m.key } });
-  } catch {}
 };
 
 handler.help = ["nuke"];
 handler.tags = ["fun"];
 handler.command = ["nuke"];
 handler.group = true;
-handler.register = true;
 
-export default handler;
+module.exports = handler;
+
 
 
