@@ -1,50 +1,5 @@
-console.log("✅ [NUKE] plugin caricato");
 
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const handler = async (m, { conn }) => {
-  if (!m.isGroup) return m.reply("☢️ Solo nei gruppi.");
-
-  let members = [];
-  try {
-    const meta = await conn.groupMetadata(m.chat);
-    members = (meta.participants || []).map((p) => p.id);
-  } catch {}
-
-  const starter =
-    `🚨 *EMERGENCY BROADCAST* 🚨\n` +
-    `☢️ Modalità *NUKE* attivata!\n` +
-    `👤 Da: @${m.sender.split("@")[0]}\n` +
-    `⚠️ _Scherzo: nessuna azione reale verrà eseguita._`;
-
-  await conn.sendMessage(
-    m.chat,
-    { text: starter, mentions: [m.sender, ...members] },
-    { quoted: m }
-  );
-
-  await delay(700);
-  await conn.sendMessage(m.chat, { text: "📡 Connessione al satellite… ✅" }, { quoted: m });
-  await delay(700);
-  await conn.sendMessage(m.chat, { text: "💣 Armamento testata… ✅" }, { quoted: m });
-  await delay(700);
-  await conn.sendMessage(m.chat, { text: "⏳ *COUNTDOWN* → 5 4 3 2 1" }, { quoted: m });
-  await delay(900);
-  await conn.sendMessage(m.chat, { text: "💥💥💥 *BOOOM!* 😱" }, { quoted: m });
-  await delay(900);
-  await conn.sendMessage(
-    m.chat,
-    { text: "✅ *FINE SIMULAZIONE* ✅\n😂 Era uno scherzo. Nessun nuke reale." },
-    { quoted: m }
-  );
-};
-
-handler.help = ["nuke"];
-handler.tags = ["fun"];
-handler.command = ["nuke"];
-handler.group = true;
-
-export default handler;
 
 
 
