@@ -71,7 +71,6 @@
     "yargs": "^18.0.0",
     "youtube-dl-exec": "latest",
     "yt-search": "^2.13.1"
-    "node-cron": "^3.0.3"
 
   },
   "engines": {
