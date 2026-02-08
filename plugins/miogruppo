@@ -9,8 +9,11 @@ let handler = async (m, { conn }) => {
 
 handler.help = ['miogruppo']
 handler.tags = ['info']
-handler.command = ['miogruppo']
+
+// 🔥 qui la differenza: REGEX (molti bot la richiedono)
+handler.command = /^miogruppo$/i
 
 export default handler
+
 
 
