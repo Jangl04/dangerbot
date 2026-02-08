@@ -90,6 +90,28 @@ handler.tags = ['group']
 
 export default handler
 
+import fs from 'fs'
+import path from 'path'
+
+const DB_FILE = path.resolve('data/bestemmiometro.json')
+
+function readDB() {
+  if (!fs.existsSync(DB_FILE)) return { enabled: {}, counts: {} }
+  return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'))
+}
+
+let handler = async (m) => {
+  if (!m.isGroup) return m.reply('Solo nei gruppi.')
+  const db = readDB()
+  const on = !!db.enabled[m.chat]
+  const c = db.counts[m.chat] || 0
+  return m.reply(`📟 Bestemmiometro\n• Stato: ${on ? 'ATTIVO' : 'DISATTIVO'}\n• Conteggio: ${c}`)
+}
+
+handler.command = /^bestemmiometro$/i
+export default handler
+
+
 
 
 
