@@ -13,7 +13,7 @@ const moduleCache = new NodeCache({ stdTTL: 300 });
 
 /*⭑⭒━━━✦❘༻☾⋆⁺₊✧ dangerbot ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
 
-global.luxifer = ['212781816909',] ['390935931875'] 
+global.luxifer = ['212781816909',] ['390935931875',] 
 global.owner =
   ['212781816909', 'luxifer', true],
   ['390935931875', 'tom', true],
