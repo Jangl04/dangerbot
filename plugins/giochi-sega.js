@@ -15,5 +15,5 @@ handler.help = ['sega'];
 handler.tags = ['giochi'];
 handler.command = /^sega$/i;
 handler.register = true;
-handler.disabled = true;//rate overlimit alle porte
+handler.admin = true;//rate overlimit alle porte
 export default handler;
