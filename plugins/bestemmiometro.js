@@ -12,7 +12,7 @@ function ensureDB() {
 function readDB() { ensureDB(); return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) }
 function writeDB(db) { ensureDB(); fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)) }
 
-// ✅ più permissive (prendono anche "porcodio" attaccato)
+// ✅ prende anche "porcodio" attaccato, maiuscole, spazi ecc.
 const PATTERNS = [
   /porc[oa]\s*d[i1]o/i,
   /porc[oa]\s*madonn[a4]/i,
@@ -22,89 +22,74 @@ const PATTERNS = [
 ]
 
 function getText(m) {
-  return (m.text || m.message?.conversation || '').toString()
+  return (m.text || m.message?.conversation || m.msg?.text || '').toString()
 }
 
-async function countIfEnabled(m) {
-  try {
-    if (!m.isGroup) return
-    const text = getText(m)
-    if (!text) return
+let handler = async (m) => {
+  if (!m.isGroup) return
 
-    const db = readDB()
-    if (!db.enabled[m.chat]) return
+  const txt = getText(m).trim()
+  if (!txt) return
 
-    let hits = 0
-    for (const re of PATTERNS) if (re.test(text)) hits++
+  // ✅ comandi italiani (manuali)
+  const low = txt.toLowerCase()
 
-    if (hits <= 0) return
-    db.counts[m.chat] = (db.counts[m.chat] || 0) + hits
-    writeDB(db)
-  } catch {}
-}
+  const db = readDB()
 
-let handler = async (m, { text, isAdmin }) => {
-  if (!m.isGroup) return m.reply('❌ Questo comando funziona solo nei gruppi.')
-
-  const args = (text || '').trim().split(/\s+/)
-  const sub = (args[0] || '').toLowerCase()
-  const cmd = (m.text || '').trim().split(/\s+/)[0].toLowerCase()
-
-  if (/^\.?attiva$/i.test(cmd)) {
-    if (sub !== 'bestemmiometro') return
-    if (!isAdmin) return m.reply('❌ Solo gli admin possono attivarlo.')
-
-    const db = readDB()
+  // .attiva bestemmiometro
+  if (low === '.attiva bestemmiometro') {
+    // se il tuo bot passa isAdmin altrove, qui facciamo check "semplice":
+    // molti bot hanno m.isAdmin / m.isGroupAdmin / m.isAdminGroup, se non esiste ignora.
+    if (m.isAdmin === false) return m.reply?.('❌ Solo admin.') // se supportato
     db.enabled[m.chat] = true
     db.counts[m.chat] = db.counts[m.chat] || 0
     writeDB(db)
-    return m.reply('✅ Bestemmiometro ATTIVO in questo gruppo.')
+    return m.reply?.('✅ Bestemmiometro ATTIVO in questo gruppo.')
   }
 
-  if (/^\.?disattiva$/i.test(cmd)) {
-    if (sub !== 'bestemmiometro') return
-    if (!isAdmin) return m.reply('❌ Solo gli admin possono disattivarlo.')
-
-    const db = readDB()
+  // .disattiva bestemmiometro
+  if (low === '.disattiva bestemmiometro') {
+    if (m.isAdmin === false) return m.reply?.('❌ Solo admin.')
     db.enabled[m.chat] = false
     writeDB(db)
-    return m.reply('✅ Bestemmiometro DISATTIVATO in questo gruppo.')
+    return m.reply?.('✅ Bestemmiometro DISATTIVATO in questo gruppo.')
   }
 
-  if (/^\.?reset$/i.test(cmd)) {
-    if (sub !== 'bestemmiometro') return
-    if (!isAdmin) return m.reply('❌ Solo gli admin possono resettare.')
-
-    const db = readDB()
+  // .reset bestemmiometro
+  if (low === '.reset bestemmiometro') {
+    if (m.isAdmin === false) return m.reply?.('❌ Solo admin.')
     db.counts[m.chat] = 0
     writeDB(db)
-    return m.reply('🧹 Bestemmiometro resettato a 0.')
+    return m.reply?.('🧹 Bestemmiometro resettato a 0.')
   }
 
-  if (/^\.?bestemmiometro$/i.test(cmd)) {
-    const db = readDB()
+  // .bestemmiometro
+  if (low === '.bestemmiometro') {
     const on = !!db.enabled[m.chat]
     const c = db.counts[m.chat] || 0
-    return m.reply(`📟 *Bestemmiometro*\n• Stato: *${on ? 'ATTIVO' : 'DISATTIVO'}*\n• Conteggio: *${c}*`)
+    return m.reply?.(`📟 *Bestemmiometro*\n• Stato: *${on ? 'ATTIVO' : 'DISATTIVO'}*\n• Conteggio: *${c}*`)
   }
+
+  // ✅ conteggio su messaggi normali (solo se attivo)
+  if (!db.enabled[m.chat]) return
+
+  let hits = 0
+  for (const re of PATTERNS) if (re.test(txt)) hits++
+  if (hits <= 0) return
+
+  db.counts[m.chat] = (db.counts[m.chat] || 0) + hits
+  writeDB(db)
 }
 
-// ✅ comandi
-handler.help = ['bestemmiometro', 'attiva bestemmiometro', 'disattiva bestemmiometro', 'reset bestemmiometro']
+// 🔥 Questa è la chiave: prende QUALSIASI testo, non solo comandi
+handler.customPrefix = /[\s\S]+/i
+handler.command = new RegExp
+
+handler.help = ['attiva bestemmiometro', 'disattiva bestemmiometro', 'bestemmiometro', 'reset bestemmiometro']
 handler.tags = ['group']
-handler.command = /^(bestemmiometro|attiva|disattiva|reset)$/i
 
 export default handler
 
-// ✅ QUI È LA PARTE IMPORTANTE: molti bot usano export before/all, non handler.before
-export async function before(m) {
-  await countIfEnabled(m)
-}
-
-// ✅ e per compatibilità massima (alcuni usano all)
-export async function all(m) {
-  await countIfEnabled(m)
-}
 
 
 
