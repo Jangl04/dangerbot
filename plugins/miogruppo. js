@@ -1,16 +1,16 @@
 let handler = async (m, { conn }) => {
-  // 🔁 metti qui il TUO link
   const link = 'https://chat.whatsapp.com/IGn4PkanPDn6sjG0J2yubV?mode=gi_t'
-
-  const testo =
-    `🔥 *Entra nel mio gruppo ufficiale!*\n` +
-    `${link}`
-
-  await conn.sendMessage(m.chat, { text: testo }, { quoted: m })
+  await conn.sendMessage(
+    m.chat,
+    { text: `🔥 Entra nel mio gruppo ufficiale!\n${link}` },
+    { quoted: m }
+  )
 }
 
 handler.help = ['miogruppo']
 handler.tags = ['info']
-handler.command = /^miogruppo$/i
+handler.command = ['miogruppo']
 
 export default handler
+
+
