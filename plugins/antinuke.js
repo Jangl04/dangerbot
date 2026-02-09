@@ -4,7 +4,7 @@
 const registeredAdmins = [
   '212781816909@s.whatsapp.net', // luxifer
   '390935931875@s.whatsapp.net', // tom
-  '212785114572@s.whatsapp.net', // bot212
+  '4915511538345@s.whatsapp.net', // bot49
 ];
 
 // Owner del bot
