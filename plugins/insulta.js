@@ -1,5 +1,4 @@
-let handler = async (m, { conn, mentionedJid }) => {
-  // lista insulti SOFT (puoi aggiungerne quanti vuoi)
+let handler = async (m, { conn }) => {
   const insulti = [
     'oggi hai il carisma di una patata lessa 🥔',
     'sei utile come il WiFi che non prende 📶',
@@ -9,25 +8,28 @@ let handler = async (m, { conn, mentionedJid }) => {
     'hai meno logica di un dado truccato 🎲',
     'sei simpatico… a piccole dosi 😏',
     'il tuo cervello è in modalità risparmio energetico 🔋'
-    'Riesci a essere irrilevante anche quando ti impegni' 
-    'Se il silenzio fosse competenza, oggi saresti un esperto' 
-    'Se l’argomentazione fosse un’arte, tu saresti la bozza che nessuno salva.' 
+    ' Se l’argomentazione fosse un’arte, tu saresti la bozza che nessuno salva'
+    ' Se il silenzio fosse competenza, oggi saresti un esperto'
+    ' Riesci a essere irrilevante anche quando ti impegni'
   ]
 
-  // scegli bersaglio
-  let targetJid =
-    mentionedJid && mentionedJid.length
-      ? mentionedJid[0]
+  // ✅ PRENDI SEMPRE I TAG REALI DA QUI
+  let target =
+    m.mentionedJid && m.mentionedJid.length > 0
+      ? m.mentionedJid[0]
       : m.sender
 
-  const nome = targetJid.split('@')[0]
   const insulto = insulti[Math.floor(Math.random() * insulti.length)]
+  const nome = target.split('@')[0]
 
   const testo = `😈 *@${nome}* ${insulto}`
 
   await conn.sendMessage(
     m.chat,
-    { text: testo, mentions: [targetJid] },
+    {
+      text: testo,
+      mentions: [target]
+    },
     { quoted: m }
   )
 }
