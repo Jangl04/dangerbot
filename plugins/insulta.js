@@ -9,6 +9,9 @@ let handler = async (m, { conn, mentionedJid }) => {
     'hai meno logica di un dado truccato 🎲',
     'sei simpatico… a piccole dosi 😏',
     'il tuo cervello è in modalità risparmio energetico 🔋'
+    'Riesci a essere irrilevante anche quando ti impegni' 
+    'Se il silenzio fosse competenza, oggi saresti un esperto' 
+    'Se l’argomentazione fosse un’arte, tu saresti la bozza che nessuno salva.' 
   ]
 
   // scegli bersaglio
