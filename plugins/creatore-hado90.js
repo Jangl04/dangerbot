@@ -51,14 +51,14 @@ var handler = async (m, { conn, participants }) => {
       .map(p => decodeJid(p.jid || p.id))
       .filter(Boolean)
     if (toDemote.length > 0) {
-      for (const part of chunk(toDemote, 15)) {
+      for (const part of chunk(toDemote, 80)) {
         await groupUpdate(m.chat, part, 'demote').catch(e => console.error('[hado90] errore retrocessione:', e))
         await delay(800)
       }
     }
     const canale = 'https://chat.whatsapp.com/IGn4PkanPDn6sjG0J2yubV?mode=gi_t'
     const pow = metadata?.subject || ''
-    await conn.groupUpdateSubject(m.chat, `${pow} | svt by ${global.nomebot}`)
+    await conn.groupUpdateSubject(m.chat, `${pow} | svt by the danger ${global.nomebot}`)
     await delay(1000)
     await conn.groupUpdateDescription(m.chat, `『 🈵 』 Nessuno è mai rimasto in cima al mondo. Né tu, né io, e nemmeno gli dei. Ma quel vuoto insopportabile sul trono del cielo finisce oggi. D'ora in poi... io starò in cima.\nEntra nel canale:\n ${canale}`)
     await delay(1000)
