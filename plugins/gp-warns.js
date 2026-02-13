@@ -83,7 +83,7 @@ ${userList}*╰⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*`;
     });
 };
 
-handler.command = /^(avvertimenti|listav|warns|listawarn|listavvertiti|listaavvertiti|warnlist|avvertiti)$/i;
+handler.command = /^(avverti)$/i;
 handler.help = ['avvertimenti'];
 handler.tags = ['gruppo'];
 export default handler;
