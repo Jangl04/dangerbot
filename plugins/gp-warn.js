@@ -141,7 +141,7 @@ async function createUserFkontak(conn, target) {
 }
 
 
-handler.command = ['avverti', 'warn', 'avvertimento'];
+handler.command = ['warn'];
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
