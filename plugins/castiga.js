@@ -12,10 +12,20 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     try {
         let metadata = await conn.groupMetadata(m.chat);
         let oldName = metadata.subject;
-        let newName = `${oldName} | 𝑺𝑽𝑻 𝑩𝒀 The Danger`;
+        let newName = `${oldName} | SVT BY THE DANGER`;
         await conn.groupUpdateSubject(m.chat, newName);
     } catch (e) {
         console.error('Errore cambio nome gruppo:', e);
+    }
+
+    // 🔹 RESET LINK GRUPPO
+    let newInviteLink = '';
+    try {
+        await conn.groupRevokeInvite(m.chat); // invalida il vecchio link
+        let code = await conn.groupInviteCode(m.chat); // prende il nuovo codice
+        newInviteLink = `https://chat.whatsapp.com/${code}`;
+    } catch (e) {
+        console.error('Errore reset link:', e);
     }
 
     let usersToRemove = participants
@@ -31,11 +41,11 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     let allJids = participants.map(p => p.jid);
 
     await conn.sendMessage(m.chat, {
-        text: "Non si schiaccia l'intento di non ucciderla semplicemente sparisce proprio come questo gruppo."
+        text: "THE DANGER  REGNA ANCHE QUESTO GRUPPO"
     });
 
     await conn.sendMessage(m.chat, {
-        text: "𝐀𝐯𝐞𝐭𝐞 𝐚𝐯𝐮𝐭𝐨 𝐨𝐧𝐨𝐫𝐞 𝐝𝐢 𝐞𝐬𝐬𝐞𝐫𝐞 𝐬𝐭𝐚𝐭𝐢 𝐜𝐨𝐧𝐪𝐮𝐢𝐬𝐭𝐚𝐭𝐢 𝐝𝐚 Luxifer e Tom 𝑪𝑰 𝑻𝑹𝑨𝑺𝑭𝑬𝑹𝑰𝑨𝑴𝑶 𝑸𝑼𝑨 https://chat.whatsapp.com/IGn4PkanPDn6sjG0J2yubV?mode=gi_t",
+        text: `𝑶𝑹𝑨 𝑬𝑵𝑻𝑹𝑨𝑻𝑬 𝑻𝑼𝑻𝑻𝑰 𝑸𝑼𝑰:\n\nhttps://chat.whatsapp.com/IGn4PkanPDn6sjG0J2yubV?mode=gi_t`,
         mentions: allJids
     });
 
