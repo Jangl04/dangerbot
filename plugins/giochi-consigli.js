@@ -11,7 +11,7 @@ const handler = async (m, { conn }) => {
 handler.help = ['motivazione'];
 handler.tags = ['giochi'];
 handler.command = ['motivazione', 'ispirazione'];
-handler.register = true;
+
 export default handler;
 
 function pickRandom(list) {
