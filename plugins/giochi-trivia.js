@@ -973,5 +973,5 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
 handler.command = /^(trivia|risposta)$/i;
 handler.help = ['trivia'];
 handler.tags = ['giochi'];
-handler.register = true
+
 export default handler;
