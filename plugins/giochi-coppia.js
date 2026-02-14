@@ -349,6 +349,6 @@ var handler = async (m, { conn, command, text, usedPrefix }) => {
 handler.help = ['coppia']
 handler.tags = ['giochi']
 handler.command = /^(ship|love|amore|coppia)$/i
-handler.register = true
+
 
 export default handler
