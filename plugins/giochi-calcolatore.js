@@ -213,7 +213,6 @@ const handler = async (m, { conn, command, text }) => {
 
 handler.help = Object.keys(commandConfig).map(cmd => `${cmd} <@tag/nome>`);//o forse era meglio fare tutto a mano
 handler.tags = ['giochi'];
-handler.register = true;
 handler.group = true;
 handler.command = Object.keys(commandConfig);
 
