@@ -329,6 +329,4 @@ handler.help = ['bandiera'];
 handler.tags = ['giochi'];
 handler.command = /^(bandiera|skipbandiera)$/i;
 handler.group = true;
-handler.register = true;
-
 export default handler;
