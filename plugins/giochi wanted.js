@@ -83,5 +83,4 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 handler.help = ['wanted']
 handler.tags = ['giochi']
 handler.command = /^(wanted)$/i
-handler.register = true
 export default handler*/
