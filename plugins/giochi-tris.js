@@ -581,6 +581,6 @@ handler.command = ['tris'];
 handler.help = ['tris @tag'];
 handler.tags = ['giochi'];
 handler.group = true;
-handler.register = true;
+
 
 export default handler;
