@@ -3,22 +3,50 @@ function pick(arr) {
 }
 
 const frasi = [
-  "⁨sei stat𝐚 stuprat𝐚 a 90 e ti hanno trattato come una puttana di merda “AHHH…AAAHHH, si continua non fermarti e ti hanno stuprato così violentemente che non riesci nemmeno a reggerti in piedi stupida troia di merda" 
+  "sei stata stuprata a 90 e ti ha trattato come una puttanaccia di merda ",
 ]
+
+function getTargetJid(m) {
+  if (m.mentionedJid && m.mentionedJid.length) return m.mentionedJid[0]
+  if (m.quoted) return m.quoted.sender
+  return null
+}
 
 let handler = async (m, { conn }) => {
 
+  if (!m.isGroup) {
+    return conn.reply(m.chat, "Usa questo comando in un gruppo 😈", m)
+  }
+
+  let target = getTargetJid(m)
+  if (!target) {
+    return conn.reply(m.chat, "Tagga qualcuno o rispondi a un messaggio 😏", m)
+  }
+
+  if (target === conn.user.jid) {
+    return conn.reply(m.chat, "🤖 Non posso stuprare  me stesso.", m)
+  }
+
   const frase = pick(frasi)
+
+  const testo =
+`🥵 *Adesso verrai scopata * 🥵
+
+@${target.split('@')[0]} sei stata stuprata da @${m.sender.split('@')[0]}
+
+${frase}`
 
   return conn.reply(
     m.chat,
-    `🥵 *Ora verrai stuprata *🥵 \n\n${frase}`,
-    m
+    testo,
+    m,
+    { mentions: [target, m.sender] }
   )
 }
 
-handler.help = ['stupra']
+handler.help = ['stupra @user', 'stupra (reply)']
 handler.tags = ['fun']
 handler.command = ['stupra']
 
 export default handler
+
