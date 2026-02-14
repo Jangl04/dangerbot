@@ -7,7 +7,7 @@ var handler = async (m, { conn, participants }) => {
             }
             
             if (!m.mentionedJid[0] && !m.quoted) {
-                let errorMsg = `*chi vuoi rimuovere?*`
+                let errorMsg = `*chi vuoi rimuovere frocio?*`
                 return m.reply(errorMsg)
             }
             
@@ -18,18 +18,18 @@ var handler = async (m, { conn, participants }) => {
             const isTargetAdmin = groupAdmins.includes(user)
             
             if (user === conn.user.jid) {
-                return conn.reply(m.chat, '『 🤨 』 `Non posso rimuovermi da solo`', m);
+                return conn.reply(m.chat, '『 🤨 』 `Non posso rimuovermi da solo coglione`', m);
             }
             if (user === ownerGroup) {
-                return conn.reply(m.chat, '『 🍥 』 `Non posso rimuovere il proprietario del gruppo`', m);
+                return conn.reply(m.chat, '『 🍥 』 `Non posso rimuovere il proprietario del gruppo handicappato`', m);
             }
             if (user === ownerBot) {
-                return conn.reply(m.chat, '『 ⁉️ 』 `A chi vuoi togliere????`', m);
+                return conn.reply(m.chat, '『 ❗ 』 `Sono owner cosa mi vuoi rimuovere faccia di merda `', m);
             }
             if (isTargetAdmin) {
-                return conn.reply(m.chat, '『 🤒 』 `Non posso rimuovere un altro admin`', m);
+                return conn.reply(m.chat, '『 🤒 』 `Non posso rimuovere un altro admin gay`', m);
             }
-            
+      
             await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
             await conn.sendMessage(m.chat, { sticker: { url: './media/sticker/bann.webp' } }, { quoted: m });
             return
@@ -42,7 +42,7 @@ var handler = async (m, { conn, participants }) => {
         const isROwner = isOwner || (global.owner[0] && global.owner[0][0] + '@s.whatsapp.net' === m.sender)
        
         if (!m.mentionedJid[0] && !m.quoted) {
-            let errorMsg = `*chi vuoi rimuovere?*`
+            let errorMsg = `*chi vuoi rimuovere cornuto*`
             return m.reply(errorMsg)
         }
         let user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted.sender
@@ -52,16 +52,16 @@ var handler = async (m, { conn, participants }) => {
         const groupAdmins = participants.filter(p => p.admin).map(p => p.id)
         const isTargetAdmin = groupAdmins.includes(user)
         if (user === conn.user.jid) {
-            return conn.reply(m.chat, '『 🤨 』 `Non posso rimuovermi da solo`', m);
+            return conn.reply(m.chat, '『 🤨 』 `Non posso rimuovermi da solo coglione`', m);
         }
         if (user === ownerGroup) {
-            return conn.reply(m.chat, '『 🍥 』 `Non posso rimuovere il proprietario del gruppo`', m);
+            return conn.reply(m.chat, '『 🍥 』 `Non posso rimuovere il proprietario del gruppo handicappato`', m);
         }
         if (user === ownerBot) {
-            return conn.reply(m.chat, '『 ⁉️ 』 `A chi vuoi togliere????`', m);
+            return conn.reply(m.chat, '『 ❗ 』 `Sono owner cosa mi vuoi rimuovere faccia di merda`', m);
         }
         if (isTargetAdmin) {
-            return conn.reply(m.chat, '『 🤒 』 `Non posso rimuovere un altro admin`', m);
+            return conn.reply(m.chat, '『 🤒 』 `Non posso rimuovere un altro admin gay`', m);
         }
         await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
         await conn.sendMessage(m.chat, { sticker: { url: './media/sticker/bann.webp' } }, { quoted: m });
