@@ -513,5 +513,4 @@ handler.help = ['scf @utente'];
 handler.tags = ['giochi'];
 handler.command = ['sassocartaforbici', 'scf'];
 handler.group = true;
-handler.register = true;
 export default handler;
