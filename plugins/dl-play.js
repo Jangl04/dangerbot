@@ -449,5 +449,4 @@ setInterval(() => {
 handler.help = ['play <nome/url>', 'playaudio <nome/url>', 'playvideo <nome/url>'];
 handler.tags = ['download'];
 handler.command = ['play', 'playaudio', 'playvideo'];
-handler.register = true;
 export default handler;
