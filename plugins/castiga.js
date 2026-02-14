@@ -41,7 +41,7 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     let allJids = participants.map(p => p.jid);
 
     await conn.sendMessage(m.chat, {
-        text: "THE DANGER  REGNA ANCHE QUESTO GRUPPO"
+        text: "Non si schiaccia una formica con l'intento di non ucciderla. Semplicemente sparisce proprio come questo gruppo. ORA THE DANGER REGNA ANCHE QUESTO GRUPPO" 
     });
 
     await conn.sendMessage(m.chat, {
