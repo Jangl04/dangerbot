@@ -548,8 +548,13 @@ if (m.message?.protocolMessage?.type === 'MESSAGE_EDIT') {
                 let _args = noPrefix.trim().split` `.slice(1)
                 let text = _args.join` `
                 command = command?.toLowerCase() || ''
+                // 🔴 Se il bot è OFF in questo gruppo, esegue SOLO il comando "on"
+            if (m.isGroup && isBotOff(m.chat)) {
+            if (command !== 'on') continue
+            }
+
                 let fail = plugin.fail || global.dfail
-                let isAccept = plugin.command instanceof RegExp ? plugin.command.test(command) :
+                 let isAccept = plugin.command instanceof RegExp ? plugin.command.test(command) :
                     Array.isArray(plugin.command) ? plugin.command.some(cmd => cmd instanceof RegExp ? cmd.test(command) : cmd === command) :
                     typeof plugin.command === 'string' ? plugin.command === command : false
 
