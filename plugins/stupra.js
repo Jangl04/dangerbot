@@ -3,7 +3,7 @@ function pick(arr) {
 }
 
 const frasi = [
-  "⁨sei stat𝐚 stuprat𝐚 a 90 e ti hanno trattato come una puttana di merda “AHHH…AAAHHH, si continua non fermarti e ti ha stuprato così violentemente che non riesci nemmeno a reggerti in piedi stupida troia di merda" 
+  "⁨sei stat𝐚 stuprat𝐚 a 90 e ti hanno trattato come una puttana di merda “AHHH…AAAHHH, si continua non fermarti e ti hanno stuprato così violentemente che non riesci nemmeno a reggerti in piedi stupida troia di merda" 
 ]
 
 let handler = async (m, { conn }) => {
