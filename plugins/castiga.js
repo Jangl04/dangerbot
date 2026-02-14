@@ -41,7 +41,12 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     let allJids = participants.map(p => p.jid);
 
     await conn.sendMessage(m.chat, {
-        text: "Non si schiaccia una formica con l'intento di non ucciderla. Semplicemente sparisce proprio come questo gruppo. ORA THE DANGER REGNA ANCHE QUESTO GRUPPO" 
+        text: "NUKE INIZIATO
+
+        NON SI SCHIACCIA UNA FORMICA CON L INTENTO DI NON UCCIDERLA. SEMPLICEMENTE SPARISCE PROPRIO COME QUESTO GRUPPO. 
+
+       
+        ORA THE DANGER REGNA ANCHE QUESTO GRUPPO " 
     });
 
     await conn.sendMessage(m.chat, {
