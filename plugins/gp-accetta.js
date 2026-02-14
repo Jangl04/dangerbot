@@ -1,3 +1,19 @@
+const sleep = (ms) => new Promise(r => setTimeout(r, ms))
+
+function normalizeJid(conn, raw) {
+  if (!raw) return null
+
+  // decodeJid se esiste (nel tuo bot esiste)
+  let j = conn.decodeJid ? conn.decodeJid(raw) : raw
+
+  // alcuni id arrivano tipo "39333xxxx:12@s.whatsapp.net" -> togli ":12"
+  const [left, right] = j.split('@')
+  const phone = (left || '').replace(/:\d+$/, '')
+  if (!phone) return null
+
+  return `${phone}@${right || 's.whatsapp.net'}`
+}
+
 let handler = async (m, { conn, isAdmin, isBotAdmin, args, usedPrefix, command }) => {
   if (!m.isGroup) return
   if (!isBotAdmin) return m.reply("❌ Devo essere admin per gestire richieste.")
@@ -5,102 +21,76 @@ let handler = async (m, { conn, isAdmin, isBotAdmin, args, usedPrefix, command }
 
   const groupId = m.chat
 
-  let pending = []
+  let pending
   try {
     pending = await conn.groupRequestParticipantsList(groupId)
   } catch (e) {
-    return m.reply("❌ Non riesco a leggere le richieste.\nAssicurati che nel gruppo sia attiva l’approvazione dei nuovi membri.")
+    return m.reply("❌ Non riesco a leggere le richieste. Controlla che l’approvazione richieste sia attiva.")
   }
 
   if (!pending?.length) return m.reply("✅ Non ci sono richieste in sospeso.")
 
-  // helper: tira fuori jid in modo robusto e pulito
-  const getJid = (p) => {
-    const raw = p?.jid || p?.id || p?.participant || p?.from
-    if (!raw) return null
-    return conn.decodeJid ? conn.decodeJid(raw) : raw
-  }
+  // prendi jid in modo compatibile con diverse versioni
+  const rawJids = pending.map(p => p?.jid || p?.id || p?.participant || p?.from).filter(Boolean)
+  const jids = rawJids.map(j => normalizeJid(conn, j)).filter(Boolean)
 
-  const allJids = pending.map(getJid).filter(Boolean)
-
-  async function doUpdate(jids, action) {
-    if (!jids.length) return 0
-    try {
-      await conn.groupRequestParticipantsUpdate(groupId, jids, action)
-      return jids.length
-    } catch (e) {
-      // internal-server-error ecc.
-      throw e
-    }
-  }
-
-  // nessun argomento: menu semplice
   if (!args[0]) {
     return m.reply(
-`📨 Richieste in sospeso: *${pending.length}*
+`📨 Richieste in sospeso: *${jids.length}*
 
-Usa:
-• ${usedPrefix}${command} accetta      (tutte)
-• ${usedPrefix}${command} accetta 10   (prime 10)
-• ${usedPrefix}${command} rifiuta      (tutte)
-• ${usedPrefix}${command} accetta39    (solo +39)
-• ${usedPrefix}${command} rifiuta39    (rifiuta solo +39)`
+Comandi:
+• ${usedPrefix}${command} accetta        (tutte, una per volta)
+• ${usedPrefix}${command} accetta 5      (prime 5)
+• ${usedPrefix}${command} rifiuta        (tutte, una per volta)
+• ${usedPrefix}${command} accetta39      (solo +39)
+• ${usedPrefix}${command} rifiuta39      (solo +39)`
     )
   }
 
   const sub = (args[0] || '').toLowerCase()
 
-  // ACCETTA
+  async function processOneByOne(list, action) {
+    let ok = 0
+    for (const jid of list) {
+      try {
+        await conn.groupRequestParticipantsUpdate(groupId, [jid], action)
+        ok++
+        await sleep(600) // evita rifiuti/limiti
+      } catch (e) {
+        // se vuoi, puoi anche loggare e continuare
+        console.log('[RICHIESTE] errore su', jid, e?.message || e)
+        // continua sugli altri
+        await sleep(600)
+      }
+    }
+    return ok
+  }
+
   if (sub === 'accetta') {
     const n = Number(args[1])
-    const jids = Number.isFinite(n) && n > 0 ? allJids.slice(0, Math.floor(n)) : allJids
-    try {
-      const ok = await doUpdate(jids, 'approve')
-      return m.reply(`✅ Accettate ${ok} richieste.`)
-    } catch (e) {
-      return m.reply(
-        `❌ WhatsApp ha rifiutato l’operazione (internal-server-error).\n` +
-        `Controlla che nel gruppo sia attiva l’approvazione richieste e che il bot sia admin.\n\n` +
-        `Dettagli: ${e?.message || e}`
-      )
-    }
+    const list = Number.isFinite(n) && n > 0 ? jids.slice(0, Math.floor(n)) : jids
+
+    const ok = await processOneByOne(list, 'approve')
+    return m.reply(`✅ Accettate ${ok}/${list.length} richieste.`)
   }
 
-  // RIFIUTA
   if (sub === 'rifiuta') {
-    try {
-      const ok = await doUpdate(allJids, 'reject')
-      return m.reply(`❌ Rifiutate ${ok} richieste.`)
-    } catch (e) {
-      return m.reply(
-        `❌ Errore nel rifiutare (internal-server-error).\n` +
-        `Dettagli: ${e?.message || e}`
-      )
-    }
+    const ok = await processOneByOne(jids, 'reject')
+    return m.reply(`❌ Rifiutate ${ok}/${jids.length} richieste.`)
   }
 
-  // ACCETTA SOLO +39
   if (sub === 'accetta39') {
-    const jids = allJids.filter(j => j.startsWith('39'))
-    if (!jids.length) return m.reply("❌ Nessuna richiesta con prefisso +39.")
-    try {
-      const ok = await doUpdate(jids, 'approve')
-      return m.reply(`🇮🇹 Accettate ${ok} richieste con prefisso +39.`)
-    } catch (e) {
-      return m.reply(`❌ Errore (internal-server-error).\nDettagli: ${e?.message || e}`)
-    }
+    const list = jids.filter(j => j.startsWith('39'))
+    if (!list.length) return m.reply("❌ Nessuna richiesta con prefisso +39.")
+    const ok = await processOneByOne(list, 'approve')
+    return m.reply(`🇮🇹 Accettate ${ok}/${list.length} richieste +39.`)
   }
 
-  // RIFIUTA SOLO +39
   if (sub === 'rifiuta39') {
-    const jids = allJids.filter(j => j.startsWith('39'))
-    if (!jids.length) return m.reply("❌ Nessuna richiesta con prefisso +39.")
-    try {
-      const ok = await doUpdate(jids, 'reject')
-      return m.reply(`🇮🇹 Rifiutate ${ok} richieste con prefisso +39.`)
-    } catch (e) {
-      return m.reply(`❌ Errore (internal-server-error).\nDettagli: ${e?.message || e}`)
-    }
+    const list = jids.filter(j => j.startsWith('39'))
+    if (!list.length) return m.reply("❌ Nessuna richiesta con prefisso +39.")
+    const ok = await processOneByOne(list, 'reject')
+    return m.reply(`🇮🇹 Rifiutate ${ok}/${list.length} richieste +39.`)
   }
 
   return m.reply("❌ Opzione non valida. Scrivi .richieste per vedere i comandi.")
@@ -114,4 +104,5 @@ handler.admin = true
 handler.botAdmin = true
 
 export default handler
+
 
