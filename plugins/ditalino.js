@@ -13,14 +13,14 @@ let handler = async (m, { conn }) => {
     text: "👈🏼👉🏼👆🏻👇🏼☝🏻"
   }, { quoted: m })
 
-  // 2️⃣ aspetta 1 secondo
-  await new Promise(r => setTimeout(r, 1000))
+  // 2️⃣ aspetta 2 secondo
+  await new Promise(r => setTimeout(r, 2000))
 
   const nuovaFrase = pick(frasi)
 
   // 3️⃣ modifica il messaggio
   await conn.sendMessage(m.chat, {
-    text: `🔥 *Ditalino Mode* 🔥\n\n${nuovaFrase}`,
+    text: `🔥 *Adesso Squirterai troia* 🔥\n\n${nuovaFrase}`,
     edit: sent.key
   })
 }
