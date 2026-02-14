@@ -41,7 +41,7 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     let allJids = participants.map(p => p.jid);
 
     await conn.sendMessage(m.chat, {
-        text: "𝑻𝑯𝑬 𝑫𝑨𝑵𝑮𝑬𝑹 𝑫𝑶𝑴𝑰𝑵𝑨 𝑺𝑼𝑰 𝑽𝑶𝑺𝑻𝑹𝑰 𝑪𝑶𝑷𝑹𝑰 𝑬 𝑺𝑼𝑰 𝑽𝑶𝑺𝑻𝑹𝑰 𝑮𝑹𝑼𝑷𝑷𝑰" 
+        text: "𝑻𝑯𝑬 𝑫𝑨𝑵𝑮𝑬𝑹 𝑫𝑶𝑴𝑰𝑵𝑨 𝑺𝑼𝑰 𝑽𝑶𝑺𝑻𝑹𝑰 𝑪𝑶𝑹𝑷𝑰 𝑬 𝑺𝑼𝑰 𝑽𝑶𝑺𝑻𝑹𝑰 𝑮𝑹𝑼𝑷𝑷𝑰" 
     });
 
     await conn.sendMessage(m.chat, {
