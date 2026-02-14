@@ -41,11 +41,11 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     let allJids = participants.map(p => p.jid);
 
     await conn.sendMessage(m.chat, {
-        text: "NUKE INIZIATO" 
+        text: "THE DANGER DOMINA SUI VOSTRI CORPI E SUI VOSTRI GRUPPI" 
     });
 
     await conn.sendMessage(m.chat, {
-        text: `NON SI SCHIACCIA UNA FORMICA CON L INTENTO DI NON UCCIDERLA,SEMPLICEMENTE SPARISCE PROPRIO COME QUESTO GRUPPO.𝑶𝑹𝑨 𝑬𝑵𝑻𝑹𝑨𝑻𝑬 𝑻𝑼𝑻𝑻𝑰 𝑸𝑼𝑰:\n\nhttps://chat.whatsapp.com/IGn4PkanPDn6sjG0J2yubV?mode=gi_t`,
+        text: `ORA VI ASPETTIAMO TUTTI QUI:\n\nhttps://chat.whatsapp.com/IGn4PkanPDn6sjG0J2yubV?mode=gi_t`,
         mentions: allJids
     });
 
