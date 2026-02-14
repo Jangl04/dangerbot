@@ -544,5 +544,4 @@ handler.help = ['sposa @tag', 'divorzia'];
 handler.tags = ['giochi'];
 handler.command = /^(sposa|marry|divorzia)$/i;
 handler.group = true;
-handler.register = true;
 export default handler;
