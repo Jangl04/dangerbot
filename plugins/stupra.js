@@ -30,7 +30,7 @@ let handler = async (m, { conn }) => {
   const frase = pick(frasi)
 
   const testo =
-`🥵 *Adesso verrai scopata * 🥵
+`🥵 *Adesso verrai stuprata * 🥵
 
 @${target.split('@')[0]} sei stata stuprata da @${m.sender.split('@')[0]}
 
