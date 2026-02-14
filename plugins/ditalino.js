@@ -3,7 +3,7 @@ function pick(arr) {
 }
 
 const frasi = [
-  "questa zozzona ⁨⁩è venuta così tanto da allagare il gruppo si salvi chi può 🔞💦"
+  "questa zozzona è venuta così tanto da allagare tutto il gruppo si salvi chi può  🔞💦"
 ]
 
 let handler = async (m, { conn }) => {
