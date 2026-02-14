@@ -1,12 +1,10 @@
 import fs from 'fs'
 
 const WARN_FILE = './warns.json'
-const MAX_WARN = 3 // cambia qui se vuoi 5, 10, ecc.
+const MAX_WARN = 3 // cambia qui se vuoi 5 ecc.
 
 // crea file se non esiste
-if (!fs.existsSync(WARN_FILE)) {
-  fs.writeFileSync(WARN_FILE, '{}')
-}
+if (!fs.existsSync(WARN_FILE)) fs.writeFileSync(WARN_FILE, '{}')
 
 function loadWarns() {
   return JSON.parse(fs.readFileSync(WARN_FILE, 'utf-8'))
@@ -25,20 +23,39 @@ function getTargetJid(m) {
   return null
 }
 
+// verifica se un jid è owner (usa global.owner come nel tuo handler)
+function isTargetOwner(jid) {
+  const num = (jid || '').split('@')[0]
+  return Array.isArray(global.owner) && global.owner.some(([n]) => String(n) === String(num))
+}
+
 let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   if (!m.isGroup) return conn.reply(m.chat, '❌ Solo nei gruppi.', m)
 
   let warns = loadWarns()
   if (!warns[m.chat]) warns[m.chat] = {}
 
+  const botJid = conn.user?.jid
+
+  // helper permessi
   const onlyStaff = () => (!isAdmin && !isOwner)
-  const needTarget = (txt) =>
-    conn.reply(
-      m.chat,
-      txt ||
-        `Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!${command} @utente ...\n(reply) !${command} ...`,
-      m
-    )
+
+  // helper: blocca target protetti (owner + bot)
+  const protectTarget = async (target) => {
+    if (!target) return false
+
+    if (botJid && target === botJid) {
+      await conn.reply(m.chat, '🤖 Non puoi usare questo comando sul bot.', m)
+      return true
+    }
+
+    if (isTargetOwner(target)) {
+      await conn.reply(m.chat, '👑 Non puoi usare questo comando sugli owner del bot.', m, { mentions: [target] })
+      return true
+    }
+
+    return false
+  }
 
   // ======================
   // ⚠️ WARN
@@ -47,7 +64,14 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
 
     let user = getTargetJid(m)
-    if (!user) return needTarget('Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!warn @utente motivo\n(reply) !warn motivo')
+    if (!user)
+      return conn.reply(
+        m.chat,
+        'Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!warn @utente motivo\n(reply) !warn motivo',
+        m
+      )
+
+    if (await protectTarget(user)) return
 
     // motivo: se tagghi -> args[1..], se reply -> args[0..]
     let reason = (m.mentionedJid?.length ? args.slice(1) : args).join(' ') || 'Nessun motivo'
@@ -80,7 +104,14 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
 
     let user = getTargetJid(m)
-    if (!user) return needTarget('Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!delwarn @utente\n(reply) !delwarn')
+    if (!user)
+      return conn.reply(
+        m.chat,
+        'Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!delwarn @utente\n(reply) !delwarn',
+        m
+      )
+
+    if (await protectTarget(user)) return
 
     let current = warns[m.chat][user] || 0
     if (current <= 0)
@@ -116,11 +147,18 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
 
     let user = getTargetJid(m)
-    if (!user) return needTarget('Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!setwarn @utente 2\n(reply) !setwarn 2')
+    if (!user)
+      return conn.reply(
+        m.chat,
+        'Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!setwarn @utente 2\n(reply) !setwarn 2',
+        m
+      )
+
+    if (await protectTarget(user)) return
 
     // numero: se tag -> args[1], se reply -> args[0]
     let nStr = m.mentionedJid?.length ? args[1] : args[0]
-    if (!nStr) return conn.reply(m.chat, `Inserisci un numero.\nEsempi:\n!setwarn @utente 2\n(reply) !setwarn 2`, m)
+    if (!nStr) return conn.reply(m.chat, 'Inserisci un numero.\nEsempi:\n!setwarn @utente 2\n(reply) !setwarn 2', m)
 
     let n = Number(nStr)
     if (!Number.isFinite(n)) return conn.reply(m.chat, '❌ Numero non valido.', m)
@@ -132,25 +170,14 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     if (n === 0) {
       delete warns[m.chat][user]
       saveWarns(warns)
-      return conn.reply(
-        m.chat,
-        `🎯 Impostato: @${user.split('@')[0]} → *0/${MAX_WARN}* ✅`,
-        m,
-        { mentions: [user] }
-      )
+      return conn.reply(m.chat, `🎯 Impostato: @${user.split('@')[0]} → *0/${MAX_WARN}* ✅`, m, { mentions: [user] })
     }
 
     warns[m.chat][user] = n
     saveWarns(warns)
 
-    await conn.reply(
-      m.chat,
-      `🎯 Impostato: @${user.split('@')[0]} → *${n}/${MAX_WARN}*`,
-      m,
-      { mentions: [user] }
-    )
+    await conn.reply(m.chat, `🎯 Impostato: @${user.split('@')[0]} → *${n}/${MAX_WARN}*`, m, { mentions: [user] })
 
-    // se impostano a MAX_WARN, kick (coerenza con sistema)
     if (n >= MAX_WARN) {
       await conn.reply(m.chat, `🚫 ${MAX_WARN} warn raggiunti. Espulsione...`, m)
       await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
@@ -162,7 +189,32 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // 📊 WARNLIST
+  // 🧹 CLEARWARN (reset totale)
+  // ======================
+  if (command === 'clearwarn') {
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
+
+    let user = getTargetJid(m)
+    if (!user)
+      return conn.reply(
+        m.chat,
+        'Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!clearwarn @utente\n(reply) !clearwarn',
+        m
+      )
+
+    if (await protectTarget(user)) return
+
+    if (warns[m.chat][user]) {
+      delete warns[m.chat][user]
+      saveWarns(warns)
+      return conn.reply(m.chat, `✅ Warn resettati per @${user.split('@')[0]}`, m, { mentions: [user] })
+    } else {
+      return conn.reply(m.chat, 'Questo utente non ha warn.', m)
+    }
+  }
+
+  // ======================
+  // 📊 WARNLIST (libero)
   // ======================
   if (command === 'warnlist') {
     let users = Object.keys(warns[m.chat] || {})
@@ -177,24 +229,6 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     }
 
     return conn.reply(m.chat, text.trim(), m, { mentions })
-  }
-
-  // ======================
-  // 🧹 CLEARWARN (reset totale)
-  // ======================
-  if (command === 'clearwarn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
-
-    let user = getTargetJid(m)
-    if (!user) return needTarget('Tagga un utente o rispondi a un suo messaggio.\n\nEsempi:\n!clearwarn @utente\n(reply) !clearwarn')
-
-    if (warns[m.chat][user]) {
-      delete warns[m.chat][user]
-      saveWarns(warns)
-      return conn.reply(m.chat, `✅ Warn resettati per @${user.split('@')[0]}`, m, { mentions: [user] })
-    } else {
-      return conn.reply(m.chat, 'Questo utente non ha warn.', m)
-    }
   }
 }
 
@@ -213,6 +247,7 @@ handler.tags = ['group']
 handler.command = ['warn', 'delwarn', 'setwarn', 'warnlist', 'clearwarn']
 
 export default handler
+
 
 
 
