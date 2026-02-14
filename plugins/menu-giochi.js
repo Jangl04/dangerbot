@@ -194,20 +194,24 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname, args, command }) => {
     const imgPath = join(__dirname, '../media/menu/varebotcoc.jpg')
 
     // ✅ Fallback: se manca l'immagine, manda solo testo
-    if (!fs.existsSync(imgPath)) {
-      return conn.sendMessage(
-        m.chat,
-        {
-          text: `⚠️ Immagine non trovata:\n${imgPath}\n\n` + text.trim(),
-          ...global.fake,
-          contextInfo: {
-            ...global.fake?.contextInfo,
-            mentionedJid: [m.sender],
-          },
-        },
-        { quoted: m }
-      )
-    }
+   if (!fs.existsSync(imgPath)) {
+  // opzionale: logga solo in console, senza scriverlo in chat
+  console.log('[menu-giochi] Immagine non trovata:', imgPath)
+
+  return conn.sendMessage(
+    m.chat,
+    {
+      text: text.trim(),
+      ...global.fake,
+      contextInfo: {
+        ...global.fake?.contextInfo,
+        mentionedJid: [m.sender],
+      },
+    },
+    { quoted: m }
+  )
+}
+
 
     return conn.sendMessage(
       m.chat,
