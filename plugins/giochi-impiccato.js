@@ -328,6 +328,6 @@ Scrivi una lettera o prova a indovinare l'intera parola!`;
 handler.help = ['impiccato'];
 handler.tags = ['giochi'];
 handler.command = ['impiccato'];
-handler.register = true;
+
 
 export default handler;
