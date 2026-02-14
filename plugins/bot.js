@@ -6,7 +6,7 @@ import fetch from 'node-fetch'
 
 var handler = m => m
 handler.all = async function (m) {
-  
+
 /*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Dati utente globali ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
 
 
@@ -116,25 +116,25 @@ global.fkontak = {
 
 /*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Canali predefiniti ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
 
-global.IdCanale = ['120363418582531215@newsletter',/*'tuojidcanale@newsletter' non togliere quello di varebot*/]
+global.IdCanale = ['',/*'tuojidcanale@newsletter' non togliere quello di varebot*/]
 global.NomeCanale = [
-  '⭒━━✧❘༻☾⋆⁺₊🩸 thedanger 🕊️₊⁺⋆☽༺❘✧━━⭒',
-  '✧⋆⁺₊❖⭑ thedanger ⭑❖₊⁺⋆✧',
-  '༺☾⋆⁺₊✧ thedanger 🕊️ ✧₊⁺⋆☽༻',
-  '⋆⁺₊✦⭑彡 thedanger彡⭑✦₊⁺⋆',
-  '⭑⭒━━━✦༻ thedanger ༺✦━━━⭒⭑',
-  '☁️⋆｡°✩ thedanger ✩°｡⋆☁️',
-  '⋆⁺₊✧༚ thedanger ༚✧₊⁺⋆',
-  '🌙⋆⁺₊ thedanger ₊⁺⋆🌙',
-  '⌜☆⌟ thedanger ⌞☆⌝',
-  '✧ 彡 thedanger 彡 ✧',
-  '✦ ⌈ thedanger ⌋ ✦',
-  '⋆⭑˚₊ thedanger ₊˚⭑⋆',
-  '╰⊱♡⊰╮thedanger╭⊱♡⊰╯',
-  '✿｡❀ 𓆩 thedanger 𓆪 ❀｡✿',
-  '✧･ﾟ: *✧･ﾟ:*thedanger*:･ﾟ✧*:･ﾟ✧',
-  '✦⭑★⭒ thedanger ⭒★⭑✦',
-  '˗ˏˋ ☾ thedanger ☽ ˎˊ˗',
+  '⭒━━✧❘༻☾⋆⁺₊🩸 dangerbot 🕊️₊⁺⋆☽༺❘✧━━⭒',
+  '✧⋆⁺₊❖⭑ dangerbot ⭑❖₊⁺⋆✧',
+  '༺☾⋆⁺₊✧ dangerbot 🕊️ ✧₊⁺⋆☽༻',
+  '⋆⁺₊✦⭑彡 dangerbot 彡⭑✦₊⁺⋆',
+  '⭑⭒━━━✦༻ dangerbot ༺✦━━━⭒⭑',
+  '☁️⋆｡°✩ dangerbot ✩°｡⋆☁️',
+  '⋆⁺₊✧༚ dangerbot ༚✧₊⁺⋆',
+  '🌙⋆⁺₊ dangerbot ₊⁺⋆🌙',
+  '⌜☆⌟ dangerbot ⌞☆⌝',
+  '✧ 彡 dangerbot 彡 ✧',
+  '✦ ⌈ dangerbot ⌋ ✦',
+  '⋆⭑˚₊ dangerbot ₊˚⭑⋆',
+  '╰⊱♡⊰╮dangerbot╭⊱♡⊰╯',
+  '✿｡❀ 𓆩 dangerbot 𓆪 ❀｡✿',
+  '✧･ﾟ: *✧･ﾟ:* dangerboy *:･ﾟ✧*:･ﾟ✧',
+  '✦⭑★⭒ dangerbot ⭒★⭑✦',
+  '˗ˏˋ ☾ danger𝚋𝚘𝚝 ☽ ˎˊ˗',
 ]
 
 /*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Utility globali ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
@@ -145,8 +145,8 @@ Array.prototype.getRandom = function () {
 async function getRandomChannel() {
   if (!Array.isArray(global.IdCanale) || !Array.isArray(global.NomeCanale) || global.IdCanale.length === 0 || global.NomeCanale.length === 0) {
     return {
-      id: '120363418582531215@newsletter',
-      name: '⭒━━✧❘༻☾⋆⁺₊🩸 thedanger 🕊️₊⁺⋆☽༺❘✧━━⭒'
+      id: '',
+      name: '⭒━━✧❘༻☾⋆⁺₊🩸 𝓿𝓪𝓻𝓮𝓫𝓸𝓽 🕊️₊⁺⋆☽༺❘✧━━⭒'
     }
   }
   let id = global.IdCanale.getRandom()
