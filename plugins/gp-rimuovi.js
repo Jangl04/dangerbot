@@ -72,7 +72,7 @@ var handler = async (m, { conn, participants }) => {
 }
 handler.help = ['rimuovi']
 handler.tags = ['gruppo']
-handler.command = /^(kick|rimuovi|paki|ban)$/i
+handler.command = /^(kick|cacca|sparisci|avadachedavra|ban)$/i
 handler.group = true
 handler.admin = true
 handler.botAdmin = true
