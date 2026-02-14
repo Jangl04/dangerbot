@@ -43,6 +43,5 @@ handler.help = ["scopa @utente"];
 handler.tags = ["fun"];
 handler.command = ["scopa"];
 handler.group = true;
-handler.register = true;
 
 export default handler;
