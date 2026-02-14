@@ -354,6 +354,6 @@ handler.help = ['wordle'];
 handler.tags = ['giochi'];
 handler.command = /^(wordle|skipwordle)$/i;
 handler.group = true;
-handler.register = true;
+
 
 export default handler;
