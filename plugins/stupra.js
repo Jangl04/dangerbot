@@ -12,7 +12,7 @@ let handler = async (m, { conn }) => {
 
   return conn.reply(
     m.chat,
-    `👑 *Domina Mode Attivato* 👑\n\n${frase}`,
+    `🥵 *Ora verrai stuprata *🥵 \n\n${frase}`,
     m
   )
 }
