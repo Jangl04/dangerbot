@@ -5,53 +5,113 @@ let handler = async (m, { conn, isAdmin, isBotAdmin, args, usedPrefix, command }
 
   const groupId = m.chat
 
-  let pending
+  let pending = []
   try {
     pending = await conn.groupRequestParticipantsList(groupId)
   } catch (e) {
-    return m.reply("❌ Errore nel recuperare le richieste.\nAssicurati che il gruppo abbia le richieste di accesso attive.")
+    return m.reply("❌ Non riesco a leggere le richieste.\nAssicurati che nel gruppo sia attiva l’approvazione dei nuovi membri.")
   }
 
-  if (!pending || !pending.length)
-    return m.reply("✅ Non ci sono richieste in sospeso.")
+  if (!pending?.length) return m.reply("✅ Non ci sono richieste in sospeso.")
 
-  // Nessun argomento → mostra stato
+  // helper: tira fuori jid in modo robusto e pulito
+  const getJid = (p) => {
+    const raw = p?.jid || p?.id || p?.participant || p?.from
+    if (!raw) return null
+    return conn.decodeJid ? conn.decodeJid(raw) : raw
+  }
+
+  const allJids = pending.map(getJid).filter(Boolean)
+
+  async function doUpdate(jids, action) {
+    if (!jids.length) return 0
+    try {
+      await conn.groupRequestParticipantsUpdate(groupId, jids, action)
+      return jids.length
+    } catch (e) {
+      // internal-server-error ecc.
+      throw e
+    }
+  }
+
+  // nessun argomento: menu semplice
   if (!args[0]) {
-    return m.reply(`📨 Richieste in sospeso: ${pending.length}\n\nUsa:\n${usedPrefix}${command} accetta\n${usedPrefix}${command} rifiuta\n${usedPrefix}${command} accetta39`)
+    return m.reply(
+`📨 Richieste in sospeso: *${pending.length}*
+
+Usa:
+• ${usedPrefix}${command} accetta      (tutte)
+• ${usedPrefix}${command} accetta 10   (prime 10)
+• ${usedPrefix}${command} rifiuta      (tutte)
+• ${usedPrefix}${command} accetta39    (solo +39)
+• ${usedPrefix}${command} rifiuta39    (rifiuta solo +39)`
+    )
   }
 
-  // ACCETTA TUTTE
-  if (args[0] === 'accetta') {
-    const jidList = pending.map(p => p.jid)
-    await conn.groupRequestParticipantsUpdate(groupId, jidList, 'approve')
-    return m.reply(`✅ Accettate ${jidList.length} richieste.`)
+  const sub = (args[0] || '').toLowerCase()
+
+  // ACCETTA
+  if (sub === 'accetta') {
+    const n = Number(args[1])
+    const jids = Number.isFinite(n) && n > 0 ? allJids.slice(0, Math.floor(n)) : allJids
+    try {
+      const ok = await doUpdate(jids, 'approve')
+      return m.reply(`✅ Accettate ${ok} richieste.`)
+    } catch (e) {
+      return m.reply(
+        `❌ WhatsApp ha rifiutato l’operazione (internal-server-error).\n` +
+        `Controlla che nel gruppo sia attiva l’approvazione richieste e che il bot sia admin.\n\n` +
+        `Dettagli: ${e?.message || e}`
+      )
+    }
   }
 
-  // RIFIUTA TUTTE
-  if (args[0] === 'rifiuta') {
-    const jidList = pending.map(p => p.jid)
-    await conn.groupRequestParticipantsUpdate(groupId, jidList, 'reject')
-    return m.reply(`❌ Rifiutate ${jidList.length} richieste.`)
+  // RIFIUTA
+  if (sub === 'rifiuta') {
+    try {
+      const ok = await doUpdate(allJids, 'reject')
+      return m.reply(`❌ Rifiutate ${ok} richieste.`)
+    } catch (e) {
+      return m.reply(
+        `❌ Errore nel rifiutare (internal-server-error).\n` +
+        `Dettagli: ${e?.message || e}`
+      )
+    }
   }
 
   // ACCETTA SOLO +39
-  if (args[0] === 'accetta39') {
-    const daAccettare = pending.filter(p => p.jid.startsWith('39'))
-    const jidList = daAccettare.map(p => p.jid)
-
-    if (!jidList.length)
-      return m.reply("❌ Nessuna richiesta con prefisso +39.")
-
-    await conn.groupRequestParticipantsUpdate(groupId, jidList, 'approve')
-    return m.reply(`🇮🇹 Accettate ${jidList.length} richieste con prefisso +39.`)
+  if (sub === 'accetta39') {
+    const jids = allJids.filter(j => j.startsWith('39'))
+    if (!jids.length) return m.reply("❌ Nessuna richiesta con prefisso +39.")
+    try {
+      const ok = await doUpdate(jids, 'approve')
+      return m.reply(`🇮🇹 Accettate ${ok} richieste con prefisso +39.`)
+    } catch (e) {
+      return m.reply(`❌ Errore (internal-server-error).\nDettagli: ${e?.message || e}`)
+    }
   }
+
+  // RIFIUTA SOLO +39
+  if (sub === 'rifiuta39') {
+    const jids = allJids.filter(j => j.startsWith('39'))
+    if (!jids.length) return m.reply("❌ Nessuna richiesta con prefisso +39.")
+    try {
+      const ok = await doUpdate(jids, 'reject')
+      return m.reply(`🇮🇹 Rifiutate ${ok} richieste con prefisso +39.`)
+    } catch (e) {
+      return m.reply(`❌ Errore (internal-server-error).\nDettagli: ${e?.message || e}`)
+    }
+  }
+
+  return m.reply("❌ Opzione non valida. Scrivi .richieste per vedere i comandi.")
 }
 
 handler.command = ['richieste']
 handler.tags = ['gruppo']
-handler.help = ['richieste', 'richieste accetta', 'richieste rifiuta', 'richieste accetta39']
+handler.help = ['richieste']
 handler.group = true
 handler.admin = true
 handler.botAdmin = true
 
 export default handler
+
