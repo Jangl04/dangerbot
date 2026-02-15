@@ -1,3 +1,10 @@
+// ✅ OWNER BOT (aggiunto solo per protezione)
+const BOT_OWNERS = [
+  '212781816909@s.whatsapp.net',
+  '390935931875@s.whatsapp.net',
+  '639753512076@s.whatsapp.net',
+];
+
 var handler = async (m, { conn, text, command }) => {
   let action, successMsg, errorMsg, helpMsg;
   if (['promote', 'promuovi', 'p'].includes(command)) {
@@ -34,6 +41,17 @@ var handler = async (m, { conn, text, command }) => {
 
   try {
     let user = number + '@s.whatsapp.net';
+
+    // ✅ BLOCCO AGGIUNTO #1: solo owner possono promote/demote
+    if (!BOT_OWNERS.includes(m.sender)) {
+      return conn.reply(m.chat, '❌ Solo gli *owner del bot* possono promuovere o retrocedere admin.', m, rcanal);
+    }
+
+    // ✅ BLOCCO AGGIUNTO #2: gli owner non si possono toccare tra loro (né promote né demote)
+    if (BOT_OWNERS.includes(user)) {
+      return conn.reply(m.chat, '❌ Non puoi modificare i permessi di un altro owner del bot.', m, rcanal);
+    }
+
     await conn.groupParticipantsUpdate(m.chat, [user], action);
     conn.reply(m.chat, successMsg, m, fake);
   } catch (e) {
