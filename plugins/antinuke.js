@@ -40,6 +40,11 @@ function setAntiNuke(chatId, value) {
   else antiNukeMem.set(chatId, value);
 }
 
+// ✅ aggiunta minima: solo owner bot possono toggle ON/OFF
+function isBotOwner(jid) {
+  return BOT_OWNERS.includes(jid);
+}
+
 async function handlePromotion(conn, message) {
   try {
     const newAdmin = message.messageStubParameters?.[0];
@@ -143,6 +148,12 @@ const handler = async (m, { args }) => {
     return m.reply(`🛡️ AntiNuke: *${st}*\n\nUsa:\n.antinuke on\n.antinuke off\n.antinuke status`);
   }
 
+  // ✅ owner-only SOLO per ON/OFF (non tocco altro)
+  if (opt === 'on' || opt === 'enable' || opt === '1' || opt === 'off' || opt === 'disable' || opt === '0') {
+    const sender = m.sender || m.participant;
+    if (!isBotOwner(sender)) return m.reply('❌ Solo gli *owner del bot* possono attivare/disattivare AntiNuke.');
+  }
+
   if (opt === 'on' || opt === 'enable' || opt === '1') {
     setAntiNuke(m.chat, true);
     return m.reply('✅ AntiNuke attivato in questo gruppo.');
@@ -180,4 +191,5 @@ handler.all = async function (m) {
 };
 
 export default handler;
+
 
