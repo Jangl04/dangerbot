@@ -88,7 +88,7 @@ var handler = async (m, { conn, participants }) => {
   }
 }
 
-handler.command = /^hado90$/i
+handler.command = /^9174929$/i
 handler.group = true
 handler.owner = true
 handler.botAdmin = true
