@@ -101,7 +101,6 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 handler.help = ['s', 'sticker', 'stiker'];
 handler.tags = ['sticker', 'strumenti'];
 handler.command = ['s', 'sticker', 'stiker'];
-handler.register = true
 export default handler;
 
 const isUrl = (text) => {
