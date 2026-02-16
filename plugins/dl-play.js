@@ -31,7 +31,8 @@ if (!fs.existsSync(tmpDir)) {
 async function download(url, options) {
     const opts = {
         noWarnings: true,
-        noCheckCertificate: true,
+        // ✅ FIX: opzione corretta (plurale)
+        noCheckCertificates: true,
         preferFreeFormats: false,
         socketTimeout: 30,
         retries: 5,
@@ -179,6 +180,7 @@ let handler = async (m, { conn, command, text, usedprefix }) => {
             await downloadMedia(m, conn, command, firstVideo.url, prefix, videoInfo, isSearchQuery);
             return;
         }
+
         const cardsPromises = searchResults.map(async (video, index) => {
             const duration = video.duration?.timestamp || video.duration || '?';
             const views = video.views?.toLocaleString() || '?';
@@ -309,7 +311,8 @@ async function downloadMedia(m, conn, command, url, prefix, preloadedVideoInfo =
                 await download(url, attemptOptions)
                 return { success: true, format, index, file: attemptFile }
             } catch (error) {
-                fs.unlink(attemptFile).catch(() => {})
+                // ✅ FIX: unlink promise-safe
+                await fs.promises.unlink(attemptFile).catch(() => {})
                 return { success: false, error, format, index }
             }
         });
@@ -329,21 +332,6 @@ async function downloadMedia(m, conn, command, url, prefix, preloadedVideoInfo =
                     await fs.promises.copyFile(successResult.value.file, tmpFile)
                     fs.unlinkSync(successResult.value.file)
                 }
-                results.forEach((result, idx) => {
-                    try {
-                        if (result.status === 'fulfilled' &&
-                            result.value &&
-                            result.value.success === false &&
-                            result.value.file &&
-                            result.value.file !== successResult.value.file) {
-                            if (fs.existsSync(result.value.file)) {
-                                fs.unlinkSync(result.value.file)
-                            }
-                        }
-                    } catch (e) {
-                        console.log(`[PULIZIA] Avviso: Impossibile eliminare file tentativo ${idx}: ${e.message}`)
-                    }
-                })
             } else {
                 for (let i = 3; i < formats.length; i++) {
                     const format = formats[i]
@@ -380,6 +368,7 @@ async function downloadMedia(m, conn, command, url, prefix, preloadedVideoInfo =
         if (!downloaded) {
             throw new Error(`Download fallito dopo tutti i tentativi. Ultimo errore: ${lastError?.message || 'Sconosciuto'}`);
         }
+
         const buffer = await fs.promises.readFile(tmpFile);
         await fs.promises.unlink(tmpFile).catch(() => {});
         
