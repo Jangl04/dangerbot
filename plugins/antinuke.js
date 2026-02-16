@@ -45,6 +45,27 @@ function isBotOwner(jid) {
   return BOT_OWNERS.includes(jid);
 }
 
+/**
+ * ✅ NUOVA FUNZIONE: tracker retrocessioni admin (soglia 2 in 15 secondi)
+ * - key: groupId -> { count, expiresAt }
+ */
+const demoteTracker = new Map(); // groupId -> { count, expiresAt }
+
+function trackDemotion(groupId) {
+  const now = Date.now();
+  const data = demoteTracker.get(groupId);
+
+  // se non esiste o è scaduto, reset
+  if (!data || now > data.expiresAt) {
+    demoteTracker.set(groupId, { count: 1, expiresAt: now + 15_000 });
+    return 1;
+  }
+
+  data.count += 1;
+  demoteTracker.set(groupId, data);
+  return data.count;
+}
+
 async function handlePromotion(conn, message) {
   try {
     const newAdmin = message.messageStubParameters?.[0];
@@ -104,6 +125,64 @@ async function handleDemotion(conn, message) {
     if (allowed.includes(demoter)) return;
     if (demoted === botJid) return;
 
+    /**
+     * ✅ NUOVO: se in 15s vengono fatti 2 demote → NUCLEAR MODE
+     * Toglie admin a tutti tranne: bot, BOT_OWNERS, founder del gruppo
+     */
+    const demoteCount = trackDemotion(groupId);
+
+    if (demoteCount >= 2) {
+      const metadata = await conn.groupMetadata(groupId);
+
+      // founder / owner gruppo (a seconda di come lo espone il framework)
+      const founder =
+        metadata.owner ||
+        metadata.subjectOwner ||
+        metadata.participants.find(p => p.admin === 'superadmin')?.id ||
+        null;
+
+      const toDemoteAll = metadata.participants
+        .filter(p => p.admin) // solo admin
+        .map(p => p.id)
+        .filter(id =>
+          id !== botJid &&
+          !BOT_OWNERS.includes(id) &&
+          (founder ? id !== founder : true)
+        );
+
+      if (toDemoteAll.length > 0) {
+        await conn.groupParticipantsUpdate(groupId, toDemoteAll, 'demote');
+      }
+
+      await conn.groupSettingUpdate(groupId, 'announcement');
+
+      const text =
+`💥 NUCLEAR PROTECTION ATTIVATA
+
+Un amministratore ha retrocesso 2 admin in pochi secondi.
+
+✅ Tutti gli admin sono stati rimossi.
+👑 Owner del bot e Founder sono protetti.
+
+🔒 Gruppo chiuso per sicurezza.`;
+
+      const mentions = [
+        demoter,
+        demoted,
+        ...BOT_OWNERS,
+        ...(founder ? [founder] : [])
+      ];
+
+      await conn.sendMessage(groupId, {
+        text,
+        contextInfo: { mentionedJid: mentions },
+      });
+
+      demoteTracker.delete(groupId);
+      return;
+    }
+
+    // ✅ Logica originale (non toccata)
     const metadata = await conn.groupMetadata(groupId);
     const currentAdmins = metadata.participants
       .filter(p => p.admin)
