@@ -9,7 +9,7 @@ var handler = async (m, { conn, text, command }) => {
   let action, successMsg, errorMsg, helpMsg;
   if (['promote', 'promuovi', 'p'].includes(command)) {
     action = 'promote';
-    successMsg = `『 ✅ 』 \`È stato promosso al ruolo di amministratore.\``;
+    successMsg = `『 ✅ 』 \`Sei stato promosso come admin del gruppo.\``;
     errorMsg = `『 ❌ 』 \`Errore nel promuovere l'utente.\``;
     helpMsg = `『 👤 』 \`A chi vuoi dare amministratore?\``;
   } else if (['demote', 'retrocedi', 'r'].includes(command)) {
