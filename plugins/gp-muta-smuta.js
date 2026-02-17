@@ -289,7 +289,6 @@ handler.before = async (m, { conn, isCommand }) => {
         return
     }
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
         await conn.sendMessage(m.chat, { delete: m.key })
