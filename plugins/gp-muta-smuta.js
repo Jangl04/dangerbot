@@ -1,15 +1,12 @@
-// MUTE TOTALE (NO SPAM) - semplice e pulito
-// comandi: .m / .muta, .um / .smuta
-// mute: mention o reply
-// durata: 10, 10m, 30s, perm/0
-// effetto mute: cancella QUALSIASI cosa scriva (messaggi e comandi), avviso 1 sola volta
+// MUTE UNICO (NO SPAM) + PROTEZIONE OWNER/BOT + NO SELF-UNMUTE
+// + "Utente già mutato" / "Questo utente non è mutato"
+// Nota: blocco comandi dipende dalla base. Qui facciamo il massimo nel singolo plugin.
 
 const mutedUsers = new Map();
-// key: numero normalizzato -> { until: number (0=perm), warned: boolean }
+// key: normalizedNumber -> { until: number (0=perm), warned: boolean }
 
 function normalizeNumFromJid(jid) {
   if (!jid) return '';
-  // prende solo la parte prima di @, rimuove simboli e toglie 39 se c’è
   const num = jid.split('@')[0].replace(/\D/g, '');
   return num.replace(/^39/, '');
 }
@@ -17,9 +14,8 @@ function normalizeNumFromJid(jid) {
 function getOwnerNums() {
   const owners = global.owner || [];
   const nums = new Set();
-
   for (const o of owners) {
-    const raw = Array.isArray(o) ? o[0] : o; // supporta [['39123', 'name']] oppure ['39123']
+    const raw = Array.isArray(o) ? o[0] : o;
     if (!raw) continue;
     const n = String(raw).replace(/\D/g, '').replace(/^39/, '');
     if (n) nums.add(n);
@@ -30,17 +26,20 @@ function getOwnerNums() {
 function parseDuration(args = []) {
   const text = args.join(' ').trim();
 
-  // perm / 0
   if (/(^|\s)(perm|perma|permanente|0)(\s|$)/i.test(text)) return 0;
 
-  // 10 / 10m / 10min / 30s / 30sec
   const m = text.match(/(^|\s)(\d+)\s*(s|sec|m|min)?(\s|$)/i);
   if (!m) return null;
 
   const value = parseInt(m[2], 10);
   const unit = (m[3] || 'm').toLowerCase();
-
   return unit.startsWith('s') ? value * 1000 : value * 60000;
+}
+
+async function deleteMsg(conn, m) {
+  try {
+    await conn.sendMessage(m.chat, { delete: m.key });
+  } catch {}
 }
 
 let handler = async (m, { conn, command, args, participants }) => {
@@ -48,17 +47,14 @@ let handler = async (m, { conn, command, args, participants }) => {
   const isMute = cmd === 'm' || cmd === 'muta';
   const isUnmute = cmd === 'um' || cmd === 'smuta';
 
-  const DEFAULT_MUTE_MIN = 10; // 👈 cambia qui il default
+  const DEFAULT_MUTE_MIN = 10;
 
-  // sender
-  const senderJid = conn.decodeJid(m.sender);
-  const senderNum = normalizeNumFromJid(senderJid);
+  const senderNum = normalizeNumFromJid(conn.decodeJid(m.sender));
 
   // target: mention o reply
   let targets = [];
   if (m.mentionedJid?.length) {
     targets = m.mentionedJid.map(j => conn.decodeJid(j));
-    // toglie i @argomenti (non è obbligatorio ma utile)
     args = args.filter(a => !a.startsWith('@'));
   } else if (m.quoted?.sender) {
     targets = [conn.decodeJid(m.quoted.sender)];
@@ -74,7 +70,7 @@ let handler = async (m, { conn, command, args, participants }) => {
     );
   }
 
-  // ✅ verifica gruppo (per numero) + compatibilità @lid
+  // verifica gruppo (numero) + compat @lid
   const setPartecipanti = new Set(
     participants.flatMap(p => {
       const a = conn.decodeJid(p.id);
@@ -86,12 +82,11 @@ let handler = async (m, { conn, command, args, participants }) => {
   targets = targets.filter(j => setPartecipanti.has(normalizeNumFromJid(j)));
   if (!targets.length) return m.reply('Utente non nel gruppo.');
 
-  // bot + owner
-  const botJid = conn.decodeJid(conn.user.jid);
-  const botNum = normalizeNumFromJid(botJid);
+  // protezioni
+  const botNum = normalizeNumFromJid(conn.decodeJid(conn.user.jid));
   const ownerNums = getOwnerNums();
 
-  // ✅ blocco: un mutato non può smutarsi da solo
+  // no self-unmute se mutato
   if (isUnmute) {
     const tryingSelf = targets.some(j => normalizeNumFromJid(j) === senderNum);
     const senderIsMuted = mutedUsers.has(senderNum);
@@ -122,53 +117,61 @@ let handler = async (m, { conn, command, args, participants }) => {
     }
 
     if (isMute) {
-      const until = timeMs ? Date.now() + timeMs : 0; // 0 = perm
+      if (mutedUsers.has(num)) {
+        await m.reply('Utente già mutato.');
+        continue;
+      }
+      const until = timeMs ? Date.now() + timeMs : 0;
       mutedUsers.set(num, { until, warned: false });
       didSomething = true;
-    } else if (isUnmute) {
-      const existed = mutedUsers.delete(num);
-      if (existed) didSomething = true;
+      continue;
+    }
+
+    if (isUnmute) {
+      if (!mutedUsers.has(num)) {
+        await m.reply('Questo utente non è mutato.');
+        continue;
+      }
+      mutedUsers.delete(num);
+      didSomething = true;
+      continue;
     }
   }
 
   if (!didSomething) return;
-
-  // risposta minimal (se vuoi silenzioso totale dimmelo e tolgo anche questa)
   return m.reply(isMute ? 'Mutato 🔇' : 'Smutato ✅');
 };
 
-// ✅ MUTE TOTALE VERO: blocca messaggi + comandi + tutto (NON dipende da isCommand)
+// BLOCCO MUTE (messaggi + tentativo blocco comandi)
 handler.before = async (m, { conn }) => {
-  if (!m.sender || m.sender === conn.user.jid) return;
+  if (!m?.sender || m.sender === conn.user.jid) return;
 
-  const senderJid = conn.decodeJid(m.sender);
-  const senderNum = normalizeNumFromJid(senderJid);
-
+  const senderNum = normalizeNumFromJid(conn.decodeJid(m.sender));
   const data = mutedUsers.get(senderNum);
   if (!data) return;
 
-  // scadenza mute
+  // scadenza
   if (data.until && Date.now() > data.until) {
     mutedUsers.delete(senderNum);
     return;
   }
 
-  // cancella qualsiasi cosa scriva
-  try {
-    await conn.sendMessage(m.chat, { delete: m.key });
-  } catch {}
+  // cancella qualsiasi cosa inviata
+  await deleteMsg(conn, m);
 
-  // avviso UNA SOLA VOLTA (no spam)
+  // avviso UNA sola volta
   if (!data.warned) {
     data.warned = true;
     mutedUsers.set(senderNum, data);
-
     try {
-      await conn.sendMessage(m.chat, {
-        text: 'Ora non puoi parlare perché sei stato mutato 🔇'
-      });
+      await conn.sendMessage(m.chat, { text: 'Ora non puoi parlare perché sei stato mutato 🔇' });
     } catch {}
   }
+
+  // tentativo “mute totale” anche sui comandi (alcune basi rispettano questo)
+  try { m.text = ''; } catch {}
+  try { m.body = ''; } catch {}
+  try { m.message = null; } catch {}
 
   return false;
 };
@@ -181,6 +184,7 @@ handler.admin = true;
 handler.botAdmin = true;
 
 export default handler;
+
 
 
 
