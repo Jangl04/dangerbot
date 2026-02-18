@@ -1,4 +1,5 @@
-import axios from 'axios'
+import fetch from 'node-fetch'
+import { createCanvas, loadImage } from 'canvas'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -6,315 +7,404 @@ import yts from 'yt-search'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const databasePath = path.join(__dirname, '../media/database/lastfm_users.json')
+const USERS_FILE = path.join(__dirname, '..', 'lastfm_users.json')
+const LIKES_FILE = path.join(__dirname, '..', 'song_likes.json')
 
-if (!fs.existsSync(path.dirname(databasePath))) fs.mkdirSync(path.dirname(databasePath), { recursive: true })
-const getDB = () => fs.existsSync(databasePath) ? JSON.parse(fs.readFileSync(databasePath, 'utf-8')) : {}
-const saveDB = (data) => fs.writeFileSync(databasePath, JSON.stringify(data, null, 2))
+if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '{}', 'utf8')
+if (!fs.existsSync(LIKES_FILE)) fs.writeFileSync(LIKES_FILE, '{}', 'utf8')
 
-const LASTFM_API_KEY = global.APIKeys?.lastfm
-const def = 'https://i.ibb.co/hJW7WwxV/varebot.jpg'
+const cache = new Map()
+const CACHE_DURATION = 300000
+const RECENT_TRACK_CACHE_DURATION = 30000 // 30 secondi per le tracce recenti
 
-async function apiCall(method, params) {
-    try {
-        const query = new URLSearchParams({ method, api_key: LASTFM_API_KEY, format: 'json', ...params })
-        const res = await axios.get(`https://ws.audioscrobbler.com/2.0/?${query}`, { timeout: 5000 })
-        return res.data
-    } catch (e) {
-        console.error('LastFM API Error:', e.message)
-        return {}
-    }
+function loadUsers() { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')) }
+function saveUsers(users) { fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8') }
+
+function loadLikes() { return JSON.parse(fs.readFileSync(LIKES_FILE, 'utf8')) }
+function saveLikes(likes) { fs.writeFileSync(LIKES_FILE, JSON.stringify(likes, null, 2), 'utf8') }
+
+function getLastfmUsername(userId) { return loadUsers()[userId] || null }
+function setLastfmUsername(userId, username) { const users = loadUsers(); users[userId] = username; saveUsers(users) }
+
+function getSongLikes(songId) { 
+  const likes = loadLikes()
+  const songData = likes[songId]
+  if (!songData) return 0
+  return songData.likes || 0
 }
 
-async function fetchCover(lastFmImages, query, isArtist = false) {
-    let cover = lastFmImages?.find(i => i.size === 'extralarge')?.['#text']
-    if (cover && cover.trim() !== '' && !cover.includes('2a96cbd8b46e442fc41c2b86b821562f')) return cover
-    try {
-        const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&limit=1&media=music&country=IT`
-        const { data } = await axios.get(searchUrl)
-        
-        if (data.results && data.results.length > 0) {
-            const result = data.results[0]
-            if (result.artworkUrl100) {
-                return result.artworkUrl100.replace('100x100bb', '600x600bb')
-            }
-        }
-    } catch (e) {
-    }
-    try {
-        const ytQuery = isArtist ? `${query} official channel` : `${query} official audio`
-        const search = await yts({ query: ytQuery, pages: 1 })
-        const video = search.videos.find(v => v.thumbnail && !v.thumbnail.includes('default.jpg'))
-        if (video) return video.thumbnail
-    } catch (err) {
-        console.error('Errore yt-search:', err.message)
-    }
-    return def
+function addSongLike(songId, userId) { 
+  const likes = loadLikes()
+  if (!likes[songId]) {
+    likes[songId] = { likes: 0, likedBy: [] }
+  }
+
+  const songData = likes[songId]
+
+  if (!songData.likedBy) songData.likedBy = []
+
+  if (songData.likedBy.includes(userId)) {
+    return { success: false, alreadyLiked: true, total: songData.likes }
+  }
+
+  songData.likes = (songData.likes || 0) + 1
+  songData.likedBy.push(userId)
+  saveLikes(likes)
+
+  return { success: true, alreadyLiked: false, total: songData.likes }
 }
 
-const handler = async (m, { conn, usedPrefix, command, text }) => {
-    let db = getDB()
-    if (command === 'setuser' || command === 'impostauser') {
-        const username = text.trim()
-        if (!username) return m.reply(`❌ Uso: ${usedPrefix}${command} <user>`)
-        db[m.sender] = username
-        saveDB(db)
-        return m.reply(`『 ✅ 』 Username *${username}* collegato!`)
+function getUserLikesReceived(userId) { 
+  const users = loadUsers()
+  const userLastfm = users[userId]
+  if (!userLastfm) return 0
+
+  const likes = loadLikes()
+  let totalLikesReceived = 0
+
+  for (const songId in likes) {
+    const parts = songId.split('_')
+    if (parts.length > 0 && parts[0].toLowerCase() === userLastfm.toLowerCase()) {
+      totalLikesReceived += likes[songId].likes || 0
     }
+  }
 
-    let targetUser = m.sender
-    if (m.mentionedJid && m.mentionedJid.length > 0) {
-        targetUser = m.mentionedJid[0]
-    }
-    const user = db[targetUser]
-    if (!user) return m.reply(`『 ⚠️ 』 ${targetUser === m.sender ? 'Registrati' : 'L\'utente taggato non ha registrato il suo username'} con: *${usedPrefix}setuser <user>*`)
-
-    const browserlessKey = global.APIKeys?.browserless
-    if (!browserlessKey) return m.reply('❌ Errore: API Key Browserless mancante nel config.js')
-    
-    const globalErrore = global.errore
-    const validPeriodsMap = {
-        sempre: 'overall',
-        settimana: '7day',
-        mese: '1month',
-        '3mesi': '3month',
-        '6mesi': '6month',
-        anno: '12month'
-    }
-
-    if (['cur', 'attuale', 'nowplaying'].includes(command)) {
-        try {
-            await conn.sendPresenceUpdate('composing', m.chat)
-            const res = await apiCall('user.getrecenttracks', { user, limit: 1 })
-            const track = res.recenttracks?.track?.[0]
-            if (!track) return m.reply('❌ Nessun brano trovato.')
-
-            const info = await apiCall('track.getInfo', { artist: track.artist['#text'], track: track.name, username: user })
-            const trackData = info.track || {}
-            const queryName = `${track.artist['#text']} ${track.name}`
-            const cover = await fetchCover(track.image, queryName, false)
-            const isNowPlaying = track['@attr']?.nowplaying === 'true'
-            const html = `
-            <html>
-            <head>
-                <style>
-                    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-                    body { margin: 0; padding: 0; width: 1000px; height: 600px; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; background: #000; overflow: hidden; }
-                    .background { position: absolute; width: 100%; height: 100%; background: url('${cover}') center/cover; filter: blur(30px) brightness(0.7); opacity: 0.7; }
-                    .glass-card { position: relative; width: 880px; height: 480px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 50px; display: flex; align-items: center; padding: 45px; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
-                    .album-art { width: 340px; height: 340px; border-radius: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); object-fit: cover; }
-                    .details { flex: 1; margin-left: 50px; color: white; }
-                    .status { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: ${isNowPlaying ? '#32d74b' : '#ff3b30'}; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-                    .track-name { font-size: 44px; font-weight: 800; line-height: 1.1; margin-bottom: 10px; letter-spacing: -1.5px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 400px; }
-                    .artist-name { font-size: 26px; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 30px; }
-                    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-                    .stat-item { background: rgba(255, 255, 255, 0.04); padding: 15px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); }
-                    .stat-label { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; font-weight: 800; margin-bottom: 4px; }
-                    .stat-value { font-size: 20px; font-weight: 700; color: #fff; }
-                </style>
-            </head>
-            <body>
-                <div class="background"></div>
-                <div class="glass-card">
-                    <img src="${cover}" class="album-art" />
-                    <div class="details">
-                        <div class="status"><span style="width:10px; height:10px; background:currentColor; border-radius:50%; box-shadow: 0 0 1px currentColor;"></span>${isNowPlaying ? 'In Riproduzione' : 'Ultimo Ascoltato'}</div>
-                        <div class="track-name">${track.name}</div>
-                        <div class="artist-name">${track.artist['#text']}</div>
-                        <div class="stats-grid">
-                            <div class="stat-item"><div class="stat-label">I Tuoi Ascolti</div><div class="stat-value">${trackData.userplaycount || 0}</div></div>
-                            <div class="stat-item"><div class="stat-label">Ascolti Globali</div><div class="stat-value">${parseInt(trackData.playcount || 0).toLocaleString()}</div></div>
-                            <div class="stat-item"><div class="stat-label">Utente</div><div class="stat-value" style="color:#0a84ff;">@${user}</div></div>
-                            <div class="stat-item"><div class="stat-label">Ascoltatori</div><div class="stat-value">${parseInt(trackData.listeners || 0).toLocaleString()}</div></div>
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>`
-            
-            const response = await axios.post(`https://chrome.browserless.io/screenshot?token=${browserlessKey}`, {
-                html,
-                options: { type: 'jpeg', quality: 90 },
-                viewport: { width: 1000, height: 600 }
-            }, { responseType: 'arraybuffer' })
-            const buffer = Buffer.from(response.data)
-
-            const interactiveButtons = [
-                {
-                    name: "quick_reply",
-                    buttonParamsJson: JSON.stringify({
-                        display_text: "🎵 Scarica Audio",
-                        id: `${usedPrefix}playaudio ${track.name} ${track.artist['#text']}`
-                    })
-                },
-                {
-                    name: "quick_reply",
-                    buttonParamsJson: JSON.stringify({
-                        display_text: "📽️ Scarica Video",
-                        id: `${usedPrefix}playvideo ${track.name} ${track.artist['#text']}`
-                    })
-                },
-                {
-                    name: "cta_url",
-                    buttonParamsJson: JSON.stringify({
-                        display_text: "Vedi su Last.fm",
-                        url: trackData.url || `https://www.last.fm/music/${encodeURIComponent(track.artist['#text'])}/_/${encodeURIComponent(track.name)}`
-                    })
-                }
-            ]
-            return conn.sendMessage(m.chat, {
-                text: `『 🎧 』 *@${user} sta ascoltando:*`,
-                footer: '',
-                cards: [{
-                    image: buffer,
-                    title: `- 『 🎵 』 ${track.name}`,
-                    body: `- 『 👤 』 ${track.artist['#text']}`,
-                    footer: '𝐯𝐚𝐫𝐞 ✧ 𝐛𝐨𝐭',
-                    buttons: interactiveButtons
-                }]
-            }, { quoted: m })
-
-        } catch (e) {
-            console.error(e)
-            return m.reply(globalErrore)
-        } finally {
-            await conn.sendPresenceUpdate('paused', m.chat)
-        }
-    }
-
-    if (['topalbums', 'topalbum'].includes(command)) {
-        try {
-            await conn.sendPresenceUpdate('composing', m.chat)
-            const periodInput = text.trim().toLowerCase() || 'mese'
-            const period = validPeriodsMap[periodInput]
-            if (!period) return m.reply(`❌ Periodo non valido. Usa: ${Object.keys(validPeriodsMap).join(', ')}`)
-
-            const res = await apiCall('user.gettopalbums', { user, limit: 10, period })
-            const albums = res.topalbums?.album || []
-            if (!albums.length) return m.reply('❌ Nessun album trovato.')
-
-            const cards = await Promise.all(albums.map(async (album, index) => {
-                const queryName = `${album.artist.name} ${album.name}`
-                const cover = await fetchCover(album.image, queryName, false)
-                const playcount = parseInt(album.playcount || 0)
-                
-                return {
-                    image: { url: cover },
-                    title: `${index + 1}. ${album.name.substring(0, 50)}${album.name.length > 50 ? '...' : ''}`,
-                    body: `👤 ${album.artist.name}\n▶️ ${playcount.toLocaleString()} ascolti`,
-                    footer: '𝐯𝐚𝐫𝐞 ✧ 𝐛𝐨𝐭',
-                    buttons: [{
-                        name: "cta_url",
-                        buttonParamsJson: JSON.stringify({
-                            display_text: "Cerca su Last.fm",
-                            url: album.url
-                        })
-                    }]
-                }
-            }))
-
-            await conn.sendMessage(m.chat, {
-                text: `『 📀 』 *Top Album per @${user}*`,
-                footer: '𝐯𝐚𝐫𝐞 ✧ 𝐛𝐨𝐭',
-                cards: cards
-            }, { quoted: m })
-        } catch (e) {
-            console.error(e)
-            return m.reply(globalErrore)
-        } finally {
-            await conn.sendPresenceUpdate('paused', m.chat)
-        }
-    }
-
-    if (['topartists', 'topartisti'].includes(command)) {
-        try {
-            await conn.sendPresenceUpdate('composing', m.chat)
-            const periodInput = text.trim().toLowerCase() || 'mese'
-            const period = validPeriodsMap[periodInput]
-            if (!period) return m.reply(`❌ Periodo non valido. Usa: ${Object.keys(validPeriodsMap).join(', ')}`)
-
-            const res = await apiCall('user.gettopartists', { user, limit: 10, period })
-            const artists = res.topartists?.artist || []
-            if (!artists.length) return m.reply('❌ Nessun artista trovato.')
-
-            const cards = await Promise.all(artists.map(async (artist, index) => {
-                const cover = await fetchCover(artist.image, artist.name, true)
-                const playcount = parseInt(artist.playcount || 0)
-
-                return {
-                    image: { url: cover },
-                    title: `${index + 1}. ${artist.name.substring(0, 50)}`,
-                    body: `▶️ ${playcount.toLocaleString()} ascolti`,
-                    footer: '𝐯𝐚𝐫𝐞 ✧ 𝐛𝐨𝐭',
-                    buttons: [{
-                        name: "cta_url",
-                        buttonParamsJson: JSON.stringify({
-                            display_text: "Vedi su Last.fm",
-                            url: artist.url
-                        })
-                    }]
-                }
-            }))
-
-            await conn.sendMessage(m.chat, {
-                text: `『 🎤 』 *Top Artisti per @${user}*`,
-                footer: '𝐯𝐚𝐫𝐞 ✧ 𝐛𝐨𝐭',
-                cards: cards
-            }, { quoted: m })
-        } catch (e) {
-            console.error(e)
-            return m.reply(globalErrore)
-        } finally {
-            await conn.sendPresenceUpdate('paused', m.chat)
-        }
-    }
-
-    if (['toptracks', 'topcanzoni'].includes(command)) {
-        try {
-            await conn.sendPresenceUpdate('composing', m.chat)
-            const periodInput = text.trim().toLowerCase() || 'mese'
-            const period = validPeriodsMap[periodInput]
-            if (!period) return m.reply(`❌ Periodo non valido. Usa: ${Object.keys(validPeriodsMap).join(', ')}`)
-
-            const res = await apiCall('user.gettoptracks', { user, limit: 10, period })
-            const tracks = res.toptracks?.track || []
-            if (!tracks.length) return m.reply('❌ Nessuna canzone trovata.')
-
-            const cards = await Promise.all(tracks.map(async (track, index) => {
-                const queryName = `${track.artist.name} ${track.name}`
-                const cover = await fetchCover(track.image, queryName, false)
-                const playcount = parseInt(track.playcount || 0)
-
-                return {
-                    image: { url: cover },
-                    title: `${index + 1}. ${track.name.substring(0, 50)}${track.name.length > 50 ? '...' : ''}`,
-                    body: `👤 ${track.artist.name}\n▶️ ${playcount.toLocaleString()} ascolti`,
-                    footer: '𝐯𝐚𝐫𝐞 ✧ 𝐛𝐨𝐭',
-                    buttons: [{
-                        name: "cta_url",
-                        buttonParamsJson: JSON.stringify({
-                            display_text: "Vedi suLast.fm",
-                            url: track.url
-                        })
-                    }]
-                }
-            }))
-
-            await conn.sendMessage(m.chat, {
-                text: `『 🎵 』 *Top Canzoni per @${user}*`,
-                footer: '𝐯𝐚𝐫𝐞 ✧ 𝐛𝐨𝐭',
-                cards: cards
-            }, { quoted: m })
-        } catch (e) {
-            console.error(e)
-            return m.reply(globalErrore)
-        } finally {
-            await conn.sendPresenceUpdate('paused', m.chat)
-        }
-    }
+  return totalLikesReceived
 }
 
-handler.command = ['setuser', 'impostauser', 'cur', 'nowplaying', 'topalbums', 'topalbum', 'topartists', 'topartisti', 'toptracks', 'topcanzoni']
-handler.register = true
+function getUsernameFromId(userId) {
+  const users = loadUsers()
+  return users[userId] || null
+}
+
+function getIdFromUsername(username) {
+  const users = loadUsers()
+  for (const [id, user] of Object.entries(users)) {
+    if (user.toLowerCase() === username.toLowerCase()) {
+      return id
+    }
+  }
+  return null
+}
+
+function generateSongId(username, artist, track) {
+  return `${username}_${artist}_${track}`.replace(/[^\w\s]/gi, '').replace(/\s+/g, '_').toLowerCase()
+}
+
+function invalidateRecentCache(username) {
+  const recentUrl = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${LASTFM_API_KEY}&format=json&limit=1`
+  cache.delete(recentUrl)
+
+  const historyUrl = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${LASTFM_API_KEY}&format=json&limit=10`
+  cache.delete(historyUrl)
+}
+
+const LASTFM_API_KEY = '36f859a1fc4121e7f0e931806507d5f9'
+
+async function fetchWithCache(url, cacheDuration = CACHE_DURATION) {
+  const now = Date.now()
+  const cached = cache.get(url)
+  if (cached && now - cached.timestamp < cacheDuration) return cached.data
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const json = await res.json()
+    cache.set(url, { data: json, timestamp: now })
+    return json
+  } catch (error) {
+    console.error('Fetch error:', error)
+    return null
+  }
+}
+
+async function getUserInfo(username) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${username}&api_key=${LASTFM_API_KEY}&format=json`
+  const data = await fetchWithCache(url)
+  return data?.user
+}
+
+async function getTrackInfo(username, artist, track) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}&username=${username}&format=json`
+  const data = await fetchWithCache(url)
+  return data?.track
+}
+
+async function getRecentTrack(username) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${LASTFM_API_KEY}&format=json&limit=1`
+  const data = await fetchWithCache(url, RECENT_TRACK_CACHE_DURATION)
+  return data?.recenttracks?.track?.[0]
+}
+
+async function getRecentTracks(username, limit = 10) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${LASTFM_API_KEY}&format=json&limit=${limit}`
+  const data = await fetchWithCache(url, RECENT_TRACK_CACHE_DURATION)
+  return data?.recenttracks?.track || []
+}
+
+async function getTopArtists(username, period = '7day', limit = 9) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${username}&api_key=${LASTFM_API_KEY}&format=json&period=${period}&limit=${limit}`
+  const data = await fetchWithCache(url)
+  return data?.topartists?.artist
+}
+
+async function getTopAlbums(username, period = '7day', limit = 9) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${username}&api_key=${LASTFM_API_KEY}&format=json&period=${period}&limit=${limit}`
+  const data = await fetchWithCache(url)
+  return data?.topalbums?.album
+}
+
+async function getTopTracks(username, period = '7day', limit = 9) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${username}&api_key=${LASTFM_API_KEY}&format=json&period=${period}&limit=${limit}`
+  const data = await fetchWithCache(url)
+  return data?.toptracks?.track
+}
+
+async function searchYoutube(query) {
+  const search = await yts(query)
+  if (!search.all.length) return null
+  return search.all[0]
+}
+
+const handler = async (m, { conn, args, usedPrefix, text, command }) => {
+  if (command === 'setuser') {
+    const username = text.trim()
+    if (!username) return conn.sendMessage(m.chat, { text: `❌ Usa: ${usedPrefix}setuser <username>` })
+    setLastfmUsername(m.sender, username)
+    return conn.sendMessage(m.chat, { text: `✅ Username *${username}* salvato!` })
+  }
+
+  if (command === 'like') {
+    const targetUser = m.mentionedJid?.[0] || text.trim()
+
+    if (!targetUser && !text) {
+      return conn.sendMessage(m.chat, { 
+        text: `❌ Specifica l'utente!\nEsempio:\n• ${usedPrefix}like @utente\n• ${usedPrefix}like username` 
+      })
+    }
+
+    let targetUsername
+    let targetUserId
+
+    if (targetUser.includes('@')) {
+      targetUserId = targetUser
+      targetUsername = getUsernameFromId(targetUserId)
+      if (!targetUsername) {
+        return conn.sendMessage(m.chat, { 
+          text: `❌ L'utente menzionato non ha registrato un username Last.fm!\nDigli di usare ${usedPrefix}setuser` 
+        })
+      }
+    } else {
+      targetUsername = targetUser
+      targetUserId = getIdFromUsername(targetUsername)
+      if (!targetUserId) {
+        return conn.sendMessage(m.chat, { 
+          text: `❌ Nessun utente trovato con username *${targetUsername}*` 
+        })
+      }
+    }
+
+    invalidateRecentCache(targetUsername)
+    const track = await getRecentTrack(targetUsername)
+    if (!track) return conn.sendMessage(m.chat, { text: '❌ Nessuna traccia trovata.' })
+
+    const artist = track.artist?.['#text'] || 'unknown'
+    const songName = track.name || 'unknown'
+
+    const songId = generateSongId(targetUsername, artist, songName)
+
+    const result = addSongLike(songId, m.sender)
+
+    if (result.alreadyLiked) {
+      return conn.sendMessage(m.chat, { 
+        text: `❌ Hai già messo like a "${songName}" di ${targetUsername}!` 
+      })
+    }
+
+    const targetName = getUsernameFromId(targetUserId) || targetUsername
+
+    return conn.sendMessage(m.chat, { 
+      text: `🔥 Hai messo fuoco a *${songName}* di ${targetName}!`
+    })
+  }
+
+  if (command === 'mylikes') {
+    const user = getLastfmUsername(m.sender)
+    if (!user) return conn.sendMessage(m.chat, { text: `❌ Registrati con ${usedPrefix}setuser <username>` })
+
+    const likesReceived = getUserLikesReceived(m.sender)
+    return conn.sendMessage(m.chat, { 
+      text: `📊 *Statistiche Like* di *${user}*\n\n` +
+            `❤️ Likes ricevuti totali: ${likesReceived}\n\n` +
+            `Usa ${usedPrefix}like @utente per mettere like alla canzone di qualcuno!`
+    })
+  }
+
+  const user = getLastfmUsername(m.sender)
+  if (!user) return conn.sendMessage(m.chat, { text: `❌ Registrati con ${usedPrefix}setuser <username>` })
+
+  if (command === 'cur') {
+    invalidateRecentCache(user)
+    const track = await getRecentTrack(user)
+    if (!track) return conn.sendMessage(m.chat, { text: '❌ Nessuna traccia trovata.' })
+
+    const nowPlaying = track['@attr']?.nowplaying === 'true'
+    const artist = track.artist?.['#text'] || 'Artista sconosciuto'
+    const title = track.name || 'Brano sconosciuto'
+    const album = track.album?.['#text'] || 'Album sconosciuto'
+    const image = track.image?.find(img => img.size === 'extralarge')?.['#text'] || null
+
+    const info = await getTrackInfo(user, artist, title)
+    const userInfo = await getUserInfo(user)
+
+    const likesReceived = getUserLikesReceived(m.sender)
+
+    const caption = `
+🎧 *${nowPlaying ? 'In riproduzione' : 'Ultimo brano'}* di ${user}
+
+🎵 ${title}
+🎤 ${artist}
+💿 ${album}
+
+▶️ Ascolti Personali: ${info?.userplaycount || 0}
+🌍 Ascolti Globali: ${info?.playcount || 0}
+📊 Ascolti Totali: ${userInfo?.playcount || 0}
+🔥 Likes ricevuti totali: ${likesReceived}
+    `.trim()
+
+    const buttons = [
+      { buttonId: `${usedPrefix}like ${user}`, buttonText: { displayText: '🔥 Like' }, type: 1 },
+      { buttonId: `${usedPrefix}topartists`, buttonText: { displayText: '🎤 Artisti' }, type: 1 },
+      { buttonId: `${usedPrefix}topalbums`, buttonText: { displayText: '💿 Album' }, type: 1 },
+      { buttonId: `${usedPrefix}toptracks`, buttonText: { displayText: '🎵 Tracce' }, type: 1 },
+      { buttonId: `${usedPrefix}cronologia`, buttonText: { displayText: '📜 Cronologia' }, type: 1 }
+    ]
+
+    if (image) {
+      await conn.sendMessage(m.chat, {
+        image: { url: image },
+        caption: caption,
+        footer: `Last.fm • ${user}`,
+        buttons: buttons,
+        headerType: 4
+      }, { quoted: m })
+    } else {
+      await conn.sendMessage(m.chat, {
+        text: caption,
+        footer: `Last.fm • ${user}`,
+        buttons: buttons,
+        headerType: 1
+      }, { quoted: m })
+    }
+    return
+  }
+
+  if (command === 'topartists') {
+    const period = text.toLowerCase().match(/(7day|1month|3month|6month|12month|overall)/)?.[0] || '7day'
+    const artists = await getTopArtists(user, period, 9)
+    if (!artists || artists.length === 0) return conn.sendMessage(m.chat, { text: '❌ Nessun dato trovato.' })
+
+    const list = artists.map((a, i) => `${i+1}. ${a.name} - ${a.playcount} scrobble`).join('\n')
+
+    const buttons = [
+      { buttonId: `${usedPrefix}topartists 7day`, buttonText: { displayText: '📅 7 giorni' }, type: 1 },
+      { buttonId: `${usedPrefix}topartists 1month`, buttonText: { displayText: '📅 1 mese' }, type: 1 },
+      { buttonId: `${usedPrefix}topartists 6month`, buttonText: { displayText: '📅 6 mesi' }, type: 1 },
+      { buttonId: `${usedPrefix}topartists overall`, buttonText: { displayText: '📊 Overall' }, type: 1 }
+    ]
+
+    await conn.sendMessage(m.chat, { 
+      text: `🎤 Top artisti di ${user} (${period}):\n\n${list}`, 
+      buttons: buttons,
+      headerType: 1 
+    }, { quoted: m })
+    return
+  }
+
+  if (command === 'topalbums') {
+    const period = text.toLowerCase().match(/(7day|1month|3month|6month|12month|overall)/)?.[0] || '7day'
+    const albums = await getTopAlbums(user, period, 9)
+    if (!albums || albums.length === 0) return conn.sendMessage(m.chat, { text: '❌ Nessun dato trovato.' })
+
+    const list = albums.map((a, i) => `${i+1}. ${a.name} - ${a.artist?.name || 'Unknown'} (${a.playcount} play)`).join('\n')
+
+    const buttons = [
+      { buttonId: `${usedPrefix}topalbums 7day`, buttonText: { displayText: '📅 7 giorni' }, type: 1 },
+      { buttonId: `${usedPrefix}topalbums 1month`, buttonText: { displayText: '📅 1 mese' }, type: 1 },
+      { buttonId: `${usedPrefix}topalbums 6month`, buttonText: { displayText: '📅 6 mesi' }, type: 1 },
+      { buttonId: `${usedPrefix}topalbums overall`, buttonText: { displayText: '📊 Overall' }, type: 1 }
+    ]
+
+    await conn.sendMessage(m.chat, { 
+      text: `💿 Top album di ${user} (${period}):\n\n${list}`, 
+      buttons: buttons,
+      headerType: 1 
+    }, { quoted: m })
+    return
+  }
+
+  if (command === 'toptracks') {
+    const period = text.toLowerCase().match(/(7day|1month|3month|6month|12month|overall)/)?.[0] || '7day'
+    const tracks = await getTopTracks(user, period, 9)
+    if (!tracks || tracks.length === 0) return conn.sendMessage(m.chat, { text: '❌ Nessun dato trovato.' })
+
+    const list = tracks.map((t, i) => `${i+1}. ${t.name} - ${t.artist?.name || 'Unknown'} (${t.playcount} play)`).join('\n')
+
+    const buttons = [
+      { buttonId: `${usedPrefix}toptracks 7day`, buttonText: { displayText: '📅 7 giorni' }, type: 1 },
+      { buttonId: `${usedPrefix}toptracks 1month`, buttonText: { displayText: '📅 1 mese' }, type: 1 },
+      { buttonId: `${usedPrefix}toptracks 6month`, buttonText: { displayText: '📅 6 mesi' }, type: 1 },
+      { buttonId: `${usedPrefix}toptracks overall`, buttonText: { displayText: '📊 Overall' }, type: 1 }
+    ]
+
+    await conn.sendMessage(m.chat, { 
+      text: `🎵 Top tracce di ${user} (${period}):\n\n${list}`, 
+      buttons: buttons,
+      headerType: 1 
+    }, { quoted: m })
+    return
+  }
+
+  if (command === 'cronologia') {
+    invalidateRecentCache(user)
+    const tracks = await getRecentTracks(user, 10)
+    if (!tracks.length) return conn.sendMessage(m.chat, { text: '❌ Nessuna cronologia trovata.' })
+
+    const trackList = tracks.map((track, i) => {
+      const nowPlaying = track['@attr']?.nowplaying === 'true'
+      const icon = nowPlaying ? '▶️' : `${i + 1}.`
+      const time = track.date ? new Date(track.date['#text']).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
+      return `${icon} ${track.name}\n   🖌️ ${track.artist['#text']}${time ? `\n   🕐 ${time}` : ''}`
+    }).join('\n\n')
+
+    const cron = `📜 Cronologia di ${user}\n\n${trackList}`
+
+    const buttons = [
+      { buttonId: `${usedPrefix}cur`, buttonText: { displayText: '🎧 Ora in riproduzione' }, type: 1 },
+      { buttonId: `${usedPrefix}topartists`, buttonText: { displayText: '🎤 Top Artisti' }, type: 1 },
+      { buttonId: `${usedPrefix}topalbums`, buttonText: { displayText: '💿 Top Album' }, type: 1 },
+      { buttonId: `${usedPrefix}toptracks`, buttonText: { displayText: '🎵 Top Tracce' }, type: 1 }
+    ]
+
+    await conn.sendMessage(m.chat, {
+      text: cron,
+      footer: 'Ultime 10 tracce ascoltate',
+      buttons: buttons,
+      headerType: 1
+    })
+    return
+  }
+
+  if (command === 'refresh') {
+    invalidateRecentCache(user)
+    return conn.sendMessage(m.chat, { 
+      text: `🔄 Cache per ${user} aggiornata! Ora vedrai i dati più recenti.`
+    })
+  }
+}
+
+handler.command = ['setuser', 'cur', 'like', 'topartists', 'topalbums', 'toptracks', 'cronologia', 'mylikes', 'refresh']
+handler.group = true
+handler.tags = ['lastfm']
 
 export default handler
