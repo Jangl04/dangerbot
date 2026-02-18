@@ -40,6 +40,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
 
   const adminFeatures = [
   { key: 'welcome', name: '👋 Welcome', desc: 'Messaggio di benvenuto' },
+  { key: 'antinuke', name: '🚨 AntiNuke', desc: 'Anti-Nuke'},
   { key: 'goodbye', name: '🚪 Addio', desc: 'Messaggio di addio' },
   { key: 'antispam', name: '🛑 Antispam', desc: 'Antispam' },
   { key: 'antitoxic', name: '🤬 Antitossici', desc: 'Avverte e rimuove per parolacce/insulti' },
@@ -176,6 +177,24 @@ const ownerFeatures = [
           break;
         }
         chat.welcome = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+         case 'antinuke':
+
+        if (m.isGroup && !(isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`Solo gli owner del bot possono usare questo comando`*';
+          break;
+        }
+
+        if (chat.antinuke === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+
+        chat.antinuke = isEnable;
+
         result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
         result.success = true;
         break;
