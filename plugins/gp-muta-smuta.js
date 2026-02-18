@@ -48,11 +48,25 @@ let handler = async (m, { conn, command, args, participants }) => {
     );
   }
 
-  // verifica che siano nel gruppo
-  const setPartecipanti = new Set(participants.map(p => conn.decodeJid(p.id)));
-  targets = targets.filter(jid => setPartecipanti.has(jid));
+  function normalizeNum(jid) {
+  if (!jid) return '';
+  return jid.split('@')[0].replace(/^39/, ''); // toglie prefisso 39 se c’è
+}
 
-  if (!targets.length) return m.reply('Utente non nel gruppo.');
+// verifica che siano nel gruppo (numero)
+const setPartecipanti = new Set(
+  participants.flatMap(p => {
+    const a = conn.decodeJid(p.id);
+    const b = p.jid ? conn.decodeJid(p.jid) : null; // alcune basi hanno anche p.jid
+    return [normalizeNum(a), b ? normalizeNum(b) : null].filter(Boolean);
+  })
+);
+
+targets = targets.filter(jid => setPartecipanti.has(normalizeNum(jid)));
+
+if (!targets.length) return m.reply('Utente non nel gruppo.');
+
+
 
   // non mutare il bot
   targets = targets.filter(jid => jid !== conn.user.jid);
