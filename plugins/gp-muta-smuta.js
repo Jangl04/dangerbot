@@ -1,22 +1,20 @@
-// MUTE MINIMAL (NO SPAM) + PROTEZIONE OWNER/BOT
+// MUTE TOTALE (NO SPAM) + PROTEZIONE OWNER/BOT + NO SELF-UNMUTE
 // comandi: .m / .muta, .um / .smuta
 // mute: mention o reply
 // durata: 10, 10m, 30s, perm/0
-// avviso: SOLO 1 volta quando il mutato tenta di scrivere
+// avviso: SOLO 1 volta quando tenta di scrivere/usare comandi
 
 const mutedUsers = new Map();
 // key: normalizedNumber -> { until: number (0 = perm), warned: boolean }
 
 function normalizeNumFromJid(jid) {
   if (!jid) return '';
-  return jid.split('@')[0].replace(/^39/, ''); // togli 39 se presente
+  return jid.split('@')[0].replace(/^39/, '');
 }
 
 function getOwnerNums() {
-  // supporta formati tipo: global.owner = [['39123...', 'name'], ...] oppure ['39123...']
   const owners = global.owner || [];
   const nums = new Set();
-
   for (const o of owners) {
     const raw = Array.isArray(o) ? o[0] : o;
     if (!raw) continue;
@@ -29,16 +27,27 @@ function getOwnerNums() {
 function parseDuration(args = []) {
   const text = args.join(' ').trim();
 
-  // perm / 0
   if (/(^|\s)(perm|perma|permanente|0)(\s|$)/i.test(text)) return 0;
 
-  // 10 / 10m / 10min / 30s / 30sec
   const m = text.match(/(^|\s)(\d+)\s*(s|sec|m|min)?(\s|$)/i);
   if (!m) return null;
 
   const value = parseInt(m[2], 10);
   const unit = (m[3] || 'm').toLowerCase();
   return unit.startsWith('s') ? value * 1000 : value * 60000;
+}
+
+async function warnOnce(conn, chat, num) {
+  const data = mutedUsers.get(num);
+  if (!data) return;
+
+  if (!data.warned) {
+    data.warned = true;
+    mutedUsers.set(num, data);
+    try {
+      await conn.sendMessage(chat, { text: 'Ora non puoi parlare perché sei stato mutato 🔇' });
+    } catch {}
+  }
 }
 
 let handler = async (m, { conn, command, args, participants }) => {
@@ -48,11 +57,14 @@ let handler = async (m, { conn, command, args, participants }) => {
 
   const DEFAULT_MUTE_MIN = 10; // 👈 cambia qui
 
-  // prendo target: mention o reply
+  // sender
+  const senderJid = conn.decodeJid(m.sender);
+  const senderNum = normalizeNumFromJid(senderJid);
+
+  // target: mention o reply
   let targets = [];
   if (m.mentionedJid?.length) {
     targets = m.mentionedJid.map(j => conn.decodeJid(j));
-    // pulisce gli argomenti dai @qualcosa
     args = args.filter(a => !a.startsWith('@'));
   } else if (m.quoted?.sender) {
     targets = [conn.decodeJid(m.quoted.sender)];
@@ -68,7 +80,7 @@ let handler = async (m, { conn, command, args, participants }) => {
     );
   }
 
-  // verifica che siano nel gruppo (confronto per numero)
+  // verifica gruppo (numero)
   const setPartecipanti = new Set(
     participants.flatMap(p => {
       const a = conn.decodeJid(p.id);
@@ -80,45 +92,55 @@ let handler = async (m, { conn, command, args, participants }) => {
   targets = targets.filter(j => setPartecipanti.has(normalizeNumFromJid(j)));
   if (!targets.length) return m.reply('Utente non nel gruppo.');
 
+  // BOT + OWNER
   const botJid = conn.decodeJid(conn.user.jid);
   const botNum = normalizeNumFromJid(botJid);
-
   const ownerNums = getOwnerNums();
+
+  // ✅ BLOCCO: un mutato non può smutarsi da solo
+  if (isUnmute) {
+    const tryingSelf = targets.some(j => normalizeNumFromJid(j) === senderNum);
+    const senderIsMuted = mutedUsers.has(senderNum);
+    if (senderIsMuted && tryingSelf) {
+      return m.reply('Sei mutato, non puoi smutarti da solo.');
+    }
+  }
 
   // durata
   let timeMs = parseDuration(args);
   if (timeMs === null && isMute) timeMs = DEFAULT_MUTE_MIN * 60000;
 
-  // applica azione
+  let didSomething = false;
+
   for (const jid of targets) {
     const num = normalizeNumFromJid(jid);
 
-    // PROTEZIONE BOT
     if (isMute && num === botNum) {
       await m.reply('Non puoi mutare il bot.');
       continue;
     }
 
-    // PROTEZIONE OWNER
     if (isMute && ownerNums.has(num)) {
       await m.reply('Non puoi mutare un owner.');
       continue;
     }
 
     if (isMute) {
-      const until = timeMs ? Date.now() + timeMs : 0; // 0 = perm
+      const until = timeMs ? Date.now() + timeMs : 0;
       mutedUsers.set(num, { until, warned: false });
+      didSomething = true;
     } else if (isUnmute) {
-      mutedUsers.delete(num);
+      const existed = mutedUsers.delete(num);
+      if (existed) didSomething = true;
     }
   }
 
-  // risposta semplice (se vuoi silenzioso totale dimmelo e la tolgo)
+  if (!didSomething) return;
   return m.reply(isMute ? 'Mutato 🔇' : 'Smutato ✅');
 };
 
-// blocco messaggi dei mutati (NO SPAM: avviso 1 sola volta)
-handler.before = async (m, { conn }) => {
+// ✅ MUTE TOTALE: blocca TUTTO (messaggi + comandi)
+handler.before = async (m, { conn, isCommand }) => {
   if (!m.sender || m.sender === conn.user.jid) return;
 
   const senderJid = conn.decodeJid(m.sender);
@@ -127,29 +149,21 @@ handler.before = async (m, { conn }) => {
   const data = mutedUsers.get(senderNum);
   if (!data) return;
 
-  // scadenza mute
+  // scadenza
   if (data.until && Date.now() > data.until) {
     mutedUsers.delete(senderNum);
     return;
   }
 
-  // cancella messaggio
+  // cancella qualsiasi cosa scriva (messaggio o comando)
   try {
     await conn.sendMessage(m.chat, { delete: m.key });
   } catch {}
 
-  // avviso SOLO una volta
-  if (!data.warned) {
-    data.warned = true;
-    mutedUsers.set(senderNum, data);
+  // avviso SOLO 1 volta
+  await warnOnce(conn, m.chat, senderNum);
 
-    try {
-      await conn.sendMessage(m.chat, {
-        text: 'Ora non puoi parlare perché sei stato mutato 🔇'
-      });
-    } catch {}
-  }
-
+  // blocca completamente
   return false;
 };
 
@@ -161,5 +175,6 @@ handler.admin = true;
 handler.botAdmin = true;
 
 export default handler;
+
 
 
