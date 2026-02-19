@@ -1,44 +1,42 @@
+// plugins/moderators.js
+// Comandi semplici: .modadd / .moddel / .mods
+// I moderatori servono solo per "ordine": lista ruoli + protezioni base
+// Richiede: global.db (o global.db.data) e owner number in global.owner / global.ownerJid
 
-// plugins/moderator.js
-// Moderatori + protezione owner/admin + comandi ordine
-// Compatibile: mention/reply estrazione target robusta + messaggi chiari
-
-const MOD_ALLOWED = new Set(["mod", "mods", "del", "warn", "unwarn", "warns", "lock", "unlock"]);
-
-function ensureDB() {
+function dbRoot() {
   global.db = global.db || {};
-  // molte basi usano global.db.data
-  if (global.db.data) global.db = global.db.data;
-
-  global.db.mods = global.db.mods || {};
-  global.db.warns = global.db.warns || {};
+  // alcune basi usano global.db.data
+  return global.db.data ? global.db.data : global.db;
 }
 
-function isOwnerJid(jid) {
-  return !!global.ownerJid && jid === global.ownerJid;
+function getOwnerJid() {
+  // prova più varianti comuni
+  if (global.ownerJid) return global.ownerJid;
+  if (typeof global.owner === "string" && global.owner.includes("@")) return global.owner;
+  // se global.owner è array tipo ["39xxxxxx"]
+  if (Array.isArray(global.owner) && global.owner[0]) {
+    const n = String(global.owner[0]).replace(/\D/g, "");
+    return n ? (n + "@s.whatsapp.net") : null;
+  }
+  return null;
 }
 
-function isGroupAdmin(participants, jid) {
-  const p = participants?.find(x => x.id === jid);
-  return !!p?.admin;
+function isOwner(sender) {
+  const ownerJid = getOwnerJid();
+  return ownerJid ? sender === ownerJid : false;
+}
+
+function ensure() {
+  const db = dbRoot();
+  db.mods = db.mods || {};   // { [gid]: [jid] }
+  return db;
 }
 
 function getMods(gid) {
-  ensureDB();
-  return global.db.mods[gid] || (global.db.mods[gid] = []);
+  const db = ensure();
+  return db.mods[gid] || (db.mods[gid] = []);
 }
 
-function isModerator(gid, jid) {
-  return getMods(gid).includes(jid);
-}
-
-function isProtectedTarget(participants, targetJid) {
-  if (isOwnerJid(targetJid)) return true;
-  if (isGroupAdmin(participants, targetJid)) return true;
-  return false;
-}
-
-// Estrazione target super-robusta: mention OR reply OR key.participant
 function pickTarget(m) {
   return (
     (m.mentionedJid && m.mentionedJid[0]) ||
@@ -48,162 +46,56 @@ function pickTarget(m) {
   );
 }
 
-function warnKey(gid, jid) {
-  return `${gid}:${jid}`;
-}
-
-function modGate(m, command, isAdmin) {
-  // riconosci gruppo anche se m.isGroup non è settato in quella base
+let handler = async (m, { conn, command, isAdmin }) => {
+  // riconosci gruppo in modo robusto
   const isGroup = m.isGroup || (typeof m.chat === "string" && m.chat.endsWith("@g.us"));
-  if (!isGroup) return { ok: false, reason: "Questo comando funziona solo nei gruppi." };
+  if (!isGroup) return conn.reply(m.chat, "Questo comando funziona solo nei gruppi.", m);
 
-  if (isOwnerJid(m.sender) || isAdmin) return { ok: true };
+  const cmd = String(command || "").toLowerCase();
+  const mods = getMods(m.chat);
 
-  if (isModerator(m.chat, m.sender) && !MOD_ALLOWED.has(command)) {
-    return { ok: false, reason: `Permesso negato. I moderatori possono usare solo: ${[...MOD_ALLOWED].join(", ")}` };
+  // .mods -> lista
+  if (cmd === "mods") {
+    if (!mods.length) return conn.reply(m.chat, "👮 Moderatori: 0\nNessun moderatore impostato.", m);
+
+    const list = mods.map((jid, i) => `${i + 1}) @${jid.split("@")[0]}`).join("\n");
+    return conn.sendMessage(m.chat, { text: `👮 Moderatori: ${mods.length}\n\n${list}`, mentions: mods }, { quoted: m });
   }
-  return { ok: true };
-}
 
-async function cmdMods(m, { conn }) {
-  const mods = getMods(m.chat);
-  if (!mods.length) return conn.reply(m.chat, "👮 Moderatori: 0\nNessun moderatore impostato.", m);
-
-  const list = mods.map((jid, i) => `${i + 1}) @${jid.split("@")[0]}`).join("\n");
-  return conn.sendMessage(m.chat, { text: `👮 Moderatori: ${mods.length}\n\n${list}`, mentions: mods }, { quoted: m });
-}
-
-async function cmdMod(m, { conn, args, isAdmin }) {
-  // solo owner/admin possono gestire i mod
-  if (!isOwnerJid(m.sender) && !isAdmin) return conn.reply(m.chat, "Solo owner/admin possono gestire i moderatori.", m);
-
-  const sub = (args[0] || "").toLowerCase();
-  const mods = getMods(m.chat);
-
-  if (sub === "list") return cmdMods(m, { conn });
+  // gestione moderatori: SOLO owner o admin
+  if (!isOwner(m.sender) && !isAdmin) {
+    return conn.reply(m.chat, "Solo owner/admin possono gestire i moderatori.", m);
+  }
 
   const target = pickTarget(m);
   if (!target) {
     return conn.reply(
       m.chat,
-      "Devi taggare un utente *oppure* rispondere a un suo messaggio.\nEsempi:\n- .mod add @user\n- (reply) .mod add",
+      "Tagga una persona oppure rispondi a un suo messaggio.\nEsempi:\n- .modadd @user\n- (reply) .modadd",
       m
     );
   }
 
-  if (isOwnerJid(target)) return conn.reply(m.chat, "L'owner non serve aggiungerlo come moderatore.", m);
+  const ownerJid = getOwnerJid();
+  if (ownerJid && target === ownerJid) {
+    return conn.reply(m.chat, "L'owner non serve aggiungerlo come moderatore.", m);
+  }
 
-  if (sub === "add") {
+  if (cmd === "modadd") {
     if (!mods.includes(target)) mods.push(target);
     return conn.reply(m.chat, "✅ Moderatore aggiunto.", m);
   }
 
-  if (sub === "del" || sub === "remove") {
-    global.db.mods[m.chat] = mods.filter(x => x !== target);
+  if (cmd === "moddel") {
+    const next = mods.filter(x => x !== target);
+    const db = ensure();
+    db.mods[m.chat] = next;
     return conn.reply(m.chat, "✅ Moderatore rimosso.", m);
-  }
-
-  return conn.reply(m.chat, "Uso: .mod add (tag/reply) | .mod del (tag/reply) | .mod list", m);
-}
-
-async function cmdDel(m, { conn, participants, isAdmin }) {
-  const can = isOwnerJid(m.sender) || isAdmin || isModerator(m.chat, m.sender);
-  if (!can) return conn.reply(m.chat, "Solo mod/admin/owner.", m);
-  if (!m.quoted) return conn.reply(m.chat, "Rispondi al messaggio da cancellare.", m);
-
-  const author = pickTarget({ quoted: m.quoted }); // prova a leggere autore
-  const realAuthor = m.quoted.sender || m.quoted.participant || (m.quoted.key && m.quoted.key.participant);
-
-  if (isModerator(m.chat, m.sender) && realAuthor && isProtectedTarget(participants, realAuthor)) {
-    return conn.reply(m.chat, "Non puoi cancellare messaggi di owner/admin.", m);
-  }
-
-  return conn.sendMessage(m.chat, { delete: m.quoted.key });
-}
-
-async function cmdWarn(m, { conn, args, participants, isAdmin }) {
-  const can = isOwnerJid(m.sender) || isAdmin || isModerator(m.chat, m.sender);
-  if (!can) return conn.reply(m.chat, "Solo mod/admin/owner.", m);
-
-  const target = pickTarget(m);
-  if (!target) return conn.reply(m.chat, "Tagga qualcuno o rispondi a un suo messaggio.", m);
-
-  if (isModerator(m.chat, m.sender) && isProtectedTarget(participants, target)) {
-    return conn.reply(m.chat, "Non puoi warnare owner/admin.", m);
-  }
-
-  const key = warnKey(m.chat, target);
-  global.db.warns[key] = (global.db.warns[key] || 0) + 1;
-
-  const reason = args.slice(1).join(" ").trim();
-  const w = global.db.warns[key];
-
-  return conn.sendMessage(
-    m.chat,
-    { text: `⚠️ Warn a @${target.split("@")[0]} (${w}/3)${reason ? `\nMotivo: ${reason}` : ""}`, mentions: [target] },
-    { quoted: m }
-  );
-}
-
-async function cmdUnwarn(m, { conn, participants, isAdmin }) {
-  if (!isOwnerJid(m.sender) && !isAdmin) return conn.reply(m.chat, "Solo admin/owner possono togliere warn.", m);
-
-  const target = pickTarget(m);
-  if (!target) return conn.reply(m.chat, "Tagga qualcuno o rispondi a un suo messaggio.", m);
-
-  const key = warnKey(m.chat, target);
-  global.db.warns[key] = Math.max(0, (global.db.warns[key] || 0) - 1);
-  return conn.reply(m.chat, "✅ Warn ridotto.", m);
-}
-
-async function cmdWarns(m, { conn }) {
-  const target = pickTarget(m) || m.sender;
-  const key = warnKey(m.chat, target);
-  const w = global.db.warns[key] || 0;
-
-  return conn.sendMessage(m.chat, { text: `📌 Warn di @${target.split("@")[0]}: ${w}/3`, mentions: [target] }, { quoted: m });
-}
-
-async function cmdLock(m, { conn, isBotAdmin, isAdmin }) {
-  const can = isOwnerJid(m.sender) || isAdmin || isModerator(m.chat, m.sender);
-  if (!can) return conn.reply(m.chat, "Solo mod/admin/owner.", m);
-  if (!isBotAdmin) return conn.reply(m.chat, "Devo essere admin per chiudere il gruppo.", m);
-
-  await conn.groupSettingUpdate(m.chat, "announcement");
-  return conn.reply(m.chat, "🔒 Gruppo chiuso.", m);
-}
-
-async function cmdUnlock(m, { conn, isBotAdmin, isAdmin }) {
-  const can = isOwnerJid(m.sender) || isAdmin || isModerator(m.chat, m.sender);
-  if (!can) return conn.reply(m.chat, "Solo mod/admin/owner.", m);
-  if (!isBotAdmin) return conn.reply(m.chat, "Devo essere admin per aprire il gruppo.", m);
-
-  await conn.groupSettingUpdate(m.chat, "not_announcement");
-  return conn.reply(m.chat, "🔓 Gruppo aperto.", m);
-}
-
-// ===== Handler =====
-let handler = async (m, ctx) => {
-  const { conn, command, isAdmin, isBotAdmin, participants, args } = ctx;
-
-  // Gate (e risposta chiara se non è gruppo / permessi)
-  const gate = modGate(m, String(command || "").toLowerCase(), isAdmin);
-  if (!gate.ok) return conn.reply(m.chat, gate.reason, m);
-
-  switch (String(command).toLowerCase()) {
-    case "mods":   return cmdMods(m, { conn });
-    case "mod":    return cmdMod(m, { conn, args, isAdmin });
-    case "del":    return cmdDel(m, { conn, participants, isAdmin });
-    case "warn":   return cmdWarn(m, { conn, args, participants, isAdmin });
-    case "unwarn": return cmdUnwarn(m, { conn, participants, isAdmin });
-    case "warns":  return cmdWarns(m, { conn });
-    case "lock":   return cmdLock(m, { conn, isBotAdmin, isAdmin });
-    case "unlock": return cmdUnlock(m, { conn, isBotAdmin, isAdmin });
   }
 };
 
-handler.help = ["mod add (tag/reply)", "mod del (tag/reply)", "mod list", "mods"];
+handler.help = ["modadd @user", "moddel @user", "mods"];
 handler.tags = ["group"];
-handler.command = /^(mod|mods|del|warn|unwarn|warns|lock|unlock)$/i;
+handler.command = /^(modadd|moddel|mods)$/i;
 
 module.exports = handler;
