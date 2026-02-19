@@ -590,7 +590,7 @@ const ownerFeatures = [
     participant: m.sender
   };
 
-  await conn.sendMessage(m.chat, { text: summaryMessage, contextInfo: dynamicContextInfo }, { quoted: fkontak_confirm });
+  await conn.sendMessage(m.chat, { text: summaryMessage, { quoted: fkontak_confirm });
 };
 
 handler.help = ['attiva', 'disattiva'];
