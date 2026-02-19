@@ -37,11 +37,8 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
   const botJid = conn.user?.jid
 
-  // ✅ AGGIUNTO SUPPORTO MODERATORI
-  const isMod = Array.isArray(global.mods) && global.mods.includes(m.sender)
-
   // helper permessi
-  const onlyStaff = () => (!isAdmin && !isOwner && !isMod)
+  const onlyStaff = () => (!isAdmin && !isOwner)
 
   // helper: blocca target protetti (owner + bot)
   const protectTarget = async (target) => {
@@ -64,7 +61,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   // ⚠️ WARN
   // ======================
   if (command === 'warn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -76,6 +73,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     if (await protectTarget(user)) return
 
+    // motivo: se tagghi -> args[1..], se reply -> args[0..]
     let reason = (m.mentionedJid?.length ? args.slice(1) : args).join(' ') || 'Nessun motivo'
 
     warns[m.chat][user] = (warns[m.chat][user] || 0) + 1
@@ -84,13 +82,13 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     await conn.reply(
       m.chat,
-      `⚠️ *WARN assegnato!*\n\n👤 Utente: @${user.split('@')[0]}\n📌 Motivo: ${reason}\n📊 Totale: ${total}/${MAX_WARN}`,
+      ⚠️ *WARN assegnato!*\n\n👤 Utente: @${user.split('@')[0]}\n📌 Motivo: ${reason}\n📊 Totale: ${total}/${MAX_WARN},
       m,
       { mentions: [user] }
     )
 
     if (total >= MAX_WARN) {
-      await conn.reply(m.chat, `🚫 ${MAX_WARN} warn raggiunti. Espulsione...`, m)
+      await conn.reply(m.chat, 🚫 ${MAX_WARN} warn raggiunti. Espulsione..., m)
       await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
       delete warns[m.chat][user]
       saveWarns(warns)
@@ -100,10 +98,10 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // ➖ DELWARN
+  // ➖ DELWARN (toglie 1)
   // ======================
   if (command === 'delwarn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -117,7 +115,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     let current = warns[m.chat][user] || 0
     if (current <= 0)
-      return conn.reply(m.chat, `✅ @${user.split('@')[0]} non ha warn.`, m, { mentions: [user] })
+      return conn.reply(m.chat, ✅ @${user.split('@')[0]} non ha warn., m, { mentions: [user] })
 
     current -= 1
 
@@ -126,7 +124,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
       saveWarns(warns)
       return conn.reply(
         m.chat,
-        `➖ Tolto 1 warn. Ora @${user.split('@')[0]} è a *0/${MAX_WARN}* ✅`,
+        ➖ Tolto 1 warn. Ora @${user.split('@')[0]} è a *0/${MAX_WARN}* ✅,
         m,
         { mentions: [user] }
       )
@@ -135,7 +133,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
       saveWarns(warns)
       return conn.reply(
         m.chat,
-        `➖ Tolto 1 warn a @${user.split('@')[0]}\n📊 Totale: *${current}/${MAX_WARN}*`,
+        ➖ Tolto 1 warn a @${user.split('@')[0]}\n📊 Totale: *${current}/${MAX_WARN}*,
         m,
         { mentions: [user] }
       )
@@ -143,10 +141,10 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // 🎯 SETWARN
+  // 🎯 SETWARN (imposta numero)
   // ======================
   if (command === 'setwarn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -158,6 +156,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     if (await protectTarget(user)) return
 
+    // numero: se tag -> args[1], se reply -> args[0]
     let nStr = m.mentionedJid?.length ? args[1] : args[0]
     if (!nStr) return conn.reply(m.chat, 'Inserisci un numero.\nEsempi:\n!setwarn @utente 2\n(reply) !setwarn 2', m)
 
@@ -171,16 +170,16 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     if (n === 0) {
       delete warns[m.chat][user]
       saveWarns(warns)
-      return conn.reply(m.chat, `🎯 Impostato: @${user.split('@')[0]} → *0/${MAX_WARN}* ✅`, m, { mentions: [user] })
+      return conn.reply(m.chat, 🎯 Impostato: @${user.split('@')[0]} → *0/${MAX_WARN}* ✅, m, { mentions: [user] })
     }
 
     warns[m.chat][user] = n
     saveWarns(warns)
 
-    await conn.reply(m.chat, `🎯 Impostato: @${user.split('@')[0]} → *${n}/${MAX_WARN}*`, m, { mentions: [user] })
+    await conn.reply(m.chat, 🎯 Impostato: @${user.split('@')[0]} → *${n}/${MAX_WARN}*, m, { mentions: [user] })
 
     if (n >= MAX_WARN) {
-      await conn.reply(m.chat, `🚫 ${MAX_WARN} warn raggiunti. Espulsione...`, m)
+      await conn.reply(m.chat, 🚫 ${MAX_WARN} warn raggiunti. Espulsione..., m)
       await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
       delete warns[m.chat][user]
       saveWarns(warns)
@@ -190,10 +189,10 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // 🧹 CLEARWARN
+  // 🧹 CLEARWARN (reset totale)
   // ======================
   if (command === 'clearwarn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -208,14 +207,14 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     if (warns[m.chat][user]) {
       delete warns[m.chat][user]
       saveWarns(warns)
-      return conn.reply(m.chat, `✅ Warn resettati per @${user.split('@')[0]}`, m, { mentions: [user] })
+      return conn.reply(m.chat, ✅ Warn resettati per @${user.split('@')[0]}, m, { mentions: [user] })
     } else {
       return conn.reply(m.chat, 'Questo utente non ha warn.', m)
     }
   }
 
   // ======================
-  // 📊 WARNLIST
+  // 📊 WARNLIST (libero)
   // ======================
   if (command === 'warnlist') {
     let users = Object.keys(warns[m.chat] || {})
@@ -225,7 +224,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     let mentions = []
 
     for (let u of users) {
-      text += `@${u.split('@')[0]} → ${warns[m.chat][u]} warn\n`
+      text += @${u.split('@')[0]} → ${warns[m.chat][u]} warn\n
       mentions.push(u)
     }
 
@@ -248,6 +247,7 @@ handler.tags = ['group']
 handler.command = ['warn', 'delwarn', 'setwarn', 'warnlist', 'clearwarn']
 
 export default handler
+
 
 
 
