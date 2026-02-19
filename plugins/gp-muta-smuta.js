@@ -113,6 +113,29 @@ let handler = async (m, { conn, command, args, participants }) => {
     // protezione owner
     if (isMute && ownerNums.has(num)) {
       await m.reply('Non puoi mutare un owner.');
+
+      // ✅ PUNIZIONE: chi prova a mutare un owner viene mutato 2 minuti
+      const PUNISH_MS = 2 * 60000;
+      const senderIsBot = senderNum === botNum;
+      const senderIsOwner = ownerNums.has(senderNum);
+
+      if (!senderIsBot && !senderIsOwner) {
+        const existing = mutedUsers.get(senderNum);
+
+        // se già mutato perma, non tocchiamo; altrimenti estendiamo/alziamo a 2 min da ora
+        if (!existing) {
+          mutedUsers.set(senderNum, { until: Date.now() + PUNISH_MS, warned: false });
+        } else if (existing.until !== 0) {
+          existing.until = Math.max(existing.until || 0, Date.now() + PUNISH_MS);
+          existing.warned = false; // così gli esce l’avviso la prima volta che parla
+          mutedUsers.set(senderNum, existing);
+        }
+
+        try {
+          await conn.sendMessage(m.chat, { text: 'Punizione: hai provato a mutare un owner. Sei mutato per 2 minuti 🔇⏳' });
+        } catch {}
+      }
+
       continue;
     }
 
