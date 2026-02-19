@@ -1,3 +1,4 @@
+
 import fetch from 'node-fetch';
 
 let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isROwner }) => {
@@ -390,7 +391,7 @@ const ownerFeatures = [
         result.success = true;
         break;
 
-      case 'antilinkuni':
+case 'antilinkuni':
       case 'antilinkuniversale':
       case 'antilinktutto':
         if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
@@ -590,7 +591,7 @@ const ownerFeatures = [
     participant: m.sender
   };
 
-  await conn.sendMessage(m.chat, { text: summaryMessage, { quoted: fkontak_confirm });
+  await conn.sendMessage(m.chat, { text: summaryMessage, contextInfo: dynamicContextInfo }, { quoted: fkontak_confirm });
 };
 
 handler.help = ['attiva', 'disattiva'];
