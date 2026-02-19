@@ -1,21 +1,7 @@
 import fetch from 'node-fetch';
 import PhoneNumber from 'awesome-phonenumber';
 
-// Moderatore = presente in global.db.data.mods[m.chat]
-const isModerator = (gid, jid) => {
-  return !!global.db?.data?.mods?.[gid]?.includes(jid);
-};
-
-const handler = async (m, { conn, participants, args, isAdmin }) => {
-  // Solo gruppo
-  if (!m.isGroup) return conn.reply(m.chat, "Questo comando funziona solo nei gruppi.", m);
-
-  // Permessi: Admin o Moderatore (anche con modoadmin attivo)
-  const mod = isModerator(m.chat, m.sender);
-  if (!isAdmin && !mod) {
-    return conn.reply(m.chat, "Solo admin o moderatori possono usare questo comando.", m);
-  }
-
+const handler = async (m, { conn, participants, args }) => {
   const messaggio = args.join` `;
   const info = messaggio ? `»『 📢 』 \`MESSAGGIO:\` *${messaggio}*` : '';
   let messaggi = `*─ׄ─ׅ─ׄ『 .𖥔 ݁ ˖🌍── .✦ 』─ׄ─ׅ─ׄ*\n\n${info ? info + '\n' : ''}\n╭  ┄ 𝅄  ۪꒰ \`varebot\` ꒱  ۟   𝅄 ┄\n`;
@@ -82,7 +68,6 @@ const handler = async (m, { conn, participants, args, isAdmin }) => {
         global.cacheStats.hits++;
         return emoji;
       }
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
@@ -185,8 +170,6 @@ const handler = async (m, { conn, participants, args, isAdmin }) => {
       }
     }
   });
-
-  // pulizia cache se cresce troppo
   if (global.emojiCache.size > 500) {
     const entries = Array.from(global.cacheTimestamps.entries())
       .sort(([,a], [,b]) => a - b)
@@ -202,8 +185,7 @@ const handler = async (m, { conn, participants, args, isAdmin }) => {
 handler.help = ['tagall'];
 handler.tags = ['gruppo'];
 handler.command = /^(tagall|invoca|menzionatutti|tag)$/i;
-
-// IMPORTANTISSIMO: tolto handler.admin = true
+handler.admin = true;
 handler.group = true;
 
 export default handler;
