@@ -37,8 +37,11 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
   const botJid = conn.user?.jid
 
+  // ✅ AGGIUNTO SUPPORTO MODERATORI
+  const isMod = Array.isArray(global.mods) && global.mods.includes(m.sender)
+
   // helper permessi
-  const onlyStaff = () => (!isAdmin && !isOwner)
+  const onlyStaff = () => (!isAdmin && !isOwner && !isMod)
 
   // helper: blocca target protetti (owner + bot)
   const protectTarget = async (target) => {
@@ -61,7 +64,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   // ⚠️ WARN
   // ======================
   if (command === 'warn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -73,7 +76,6 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     if (await protectTarget(user)) return
 
-    // motivo: se tagghi -> args[1..], se reply -> args[0..]
     let reason = (m.mentionedJid?.length ? args.slice(1) : args).join(' ') || 'Nessun motivo'
 
     warns[m.chat][user] = (warns[m.chat][user] || 0) + 1
@@ -98,10 +100,10 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // ➖ DELWARN (toglie 1)
+  // ➖ DELWARN
   // ======================
   if (command === 'delwarn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -141,10 +143,10 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // 🎯 SETWARN (imposta numero)
+  // 🎯 SETWARN
   // ======================
   if (command === 'setwarn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -156,7 +158,6 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     if (await protectTarget(user)) return
 
-    // numero: se tag -> args[1], se reply -> args[0]
     let nStr = m.mentionedJid?.length ? args[1] : args[0]
     if (!nStr) return conn.reply(m.chat, 'Inserisci un numero.\nEsempi:\n!setwarn @utente 2\n(reply) !setwarn 2', m)
 
@@ -189,10 +190,10 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // 🧹 CLEARWARN (reset totale)
+  // 🧹 CLEARWARN
   // ======================
   if (command === 'clearwarn') {
-    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin o owner.', m)
+    if (onlyStaff()) return conn.reply(m.chat, '❌ Solo admin, owner o moderatori.', m)
 
     let user = getTargetJid(m)
     if (!user)
@@ -214,7 +215,7 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   // ======================
-  // 📊 WARNLIST (libero)
+  // 📊 WARNLIST
   // ======================
   if (command === 'warnlist') {
     let users = Object.keys(warns[m.chat] || {})
