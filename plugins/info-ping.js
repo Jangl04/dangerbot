@@ -73,6 +73,8 @@ function clockString(ms) {
 handler.help = ['ping'];
 handler.tags = ['info'];
 handler.command = /^(ping)$/i;
-handler.admin = true;
+
+// ✅ deve funzionare ovunque: niente requisito admin
+handler.admin = false;
 
 export default handler;
