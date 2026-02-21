@@ -1,185 +1,89 @@
-// Tracker retrocessioni (2 in 15 sec = nuclear)
-const demoteTracker = new Map(); // groupId -> { count, expiresAt }
+const handler = m => m;
 
-function trackDemotion(groupId) {
-  const now = Date.now();
-  const data = demoteTracker.get(groupId);
-
-  if (!data || now > data.expiresAt) {
-    demoteTracker.set(groupId, { count: 1, expiresAt: now + 15000 });
-    return 1;
-  }
-
-  data.count += 1;
-  demoteTracker.set(groupId, data);
-  return data.count;
-}
-
+// Lista utenti autorizzati
 const registeredAdmins = [
-  '212781816909@s.whatsapp.net',
-  '390935931875@s.whatsapp.net',
-  '4915511309251@s.whatsapp.net',
+  '@s.whatsapp.net',
+  '@s.whatsapp.net',
 ];
 
-const BOT_OWNERS = [
-  '212781816909@s.whatsapp.net',
-  '390935931875@s.whatsapp.net',
-];
+handler.before = async function (m, { conn, participants, isBotAdmin }) {
+  if (!m.isGroup) return;
+  if (!isBotAdmin) return;
 
-export async function before(m, { conn, isBotAdmin }) {
-  if (m.isBaileys || m.fromMe) return true;
-  if (!m.isGroup) return false;
-  if (!isBotAdmin) return false;
+  const chat = global.db.data.chats[m.chat];
+  if (!chat?.antinuke) return;
 
-  let chat = global.db.data.chats[m.chat];
-  if (!chat) return false;
+  const sender = m.key?.participant || m.participant || m.sender;
 
-  // 🔒 Se antinuke non attivo → esce
-  if (!chat.antiNuke) return false;
+  if (![29, 30].includes(m.messageStubType)) return;
 
-  const botJid = conn.user.jid;
-  const groupId = m.chat;
-  const promoter = m.participant;
-  const allowed = [botJid, ...BOT_OWNERS, ...registeredAdmins];
+  const botJid = conn.user.id.split(':')[0] + '@s.whatsapp.net';
+  const BOT_OWNERS = global.owner.map(o => o[0] + '@s.whatsapp.net');
 
+  let founderJid = null;
   try {
-
-    // =============================
-    // 🚀 PROMOZIONE (Stub 29)
-    // =============================
-    if (m.messageStubType === 29) {
-
-      const newAdmin = m.messageStubParameters?.[0];
-      if (!newAdmin) return true;
-
-      if (allowed.includes(promoter)) return true;
-      if (newAdmin === botJid) return true;
-
-      const metadata = await conn.groupMetadata(groupId);
-
-      const currentAdmins = metadata.participants
-        .filter(p => p.admin)
-        .map(p => p.id)
-        .filter(id => !allowed.includes(id));
-
-      const toDemote = [...new Set([...currentAdmins, promoter, newAdmin])];
-
-      if (toDemote.length > 0) {
-        await conn.groupParticipantsUpdate(groupId, toDemote, 'demote');
-      }
-
-      await conn.groupSettingUpdate(groupId, 'announcement');
-
-      await conn.sendMessage(groupId, {
-        text: `╔═══━─━─━─━─━─━─━═══╗
-   ⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 • 𝐀𝐍𝐓𝐈𝐍𝐔𝐊𝐄
-╚═══━─━─━─━─━─━─━═══╝
-🚨 PROMO NON AUTORIZZATA
-
-🔒 Gruppo chiuso per sicurezza.
-👑 Owner avvisati.
-━━━━━━━━━━━━━━━━━━`,
-        contextInfo: {
-          mentionedJid: [promoter, newAdmin, ...BOT_OWNERS],
-        },
-      });
-
-      return true;
-    }
-
-    // =============================
-    // 💣 RETROCESSIONE (Stub 30)
-    // =============================
-    if (m.messageStubType === 30) {
-
-      const demoted = m.messageStubParameters?.[0];
-      if (!demoted) return true;
-
-      if (allowed.includes(promoter)) return true;
-      if (demoted === botJid) return true;
-
-      const demoteCount = trackDemotion(groupId);
-
-      // 💥 NUCLEAR MODE
-      if (demoteCount >= 2) {
-
-        const metadata = await conn.groupMetadata(groupId);
-
-        const founder =
-          metadata.owner ||
-          metadata.subjectOwner ||
-          metadata.participants.find(p => p.admin === 'superadmin')?.id ||
-          null;
-
-        const toDemoteAll = metadata.participants
-          .filter(p => p.admin)
-          .map(p => p.id)
-          .filter(id =>
-            id !== botJid &&
-            !BOT_OWNERS.includes(id) &&
-            (founder ? id !== founder : true)
-          );
-
-        if (toDemoteAll.length > 0) {
-          await conn.groupParticipantsUpdate(groupId, toDemoteAll, 'demote');
-        }
-
-        await conn.groupSettingUpdate(groupId, 'announcement');
-
-        await conn.sendMessage(groupId, {
-          text: `╔═══━─━─━─━─━─━─━═══╗
-   ⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 • 𝐍𝐔𝐂𝐋𝐄𝐀𝐑
-╚═══━─━─━─━─━─━─━═══╝
-💥 MODALITÀ NUCLEARE ATTIVATA
-
-Tutti gli admin rimossi.
-Gruppo chiuso per takeover.
-━━━━━━━━━━━━━━━━━━`,
-          contextInfo: {
-            mentionedJid: [promoter, demoted, ...BOT_OWNERS, ...(founder ? [founder] : [])],
-          },
-        });
-
-        demoteTracker.delete(groupId);
-        return true;
-      }
-
-      // 🔒 Singola retrocessione
-      const metadata = await conn.groupMetadata(groupId);
-
-      const currentAdmins = metadata.participants
-        .filter(p => p.admin)
-        .map(p => p.id)
-        .filter(id => !allowed.includes(id));
-
-      const toDemote = [...new Set([...currentAdmins, promoter, demoted])];
-
-      if (toDemote.length > 0) {
-        await conn.groupParticipantsUpdate(groupId, toDemote, 'demote');
-      }
-
-      await conn.groupSettingUpdate(groupId, 'announcement');
-
-      await conn.sendMessage(groupId, {
-        text: `╔═══━─━─━─━─━─━─━═══╗
-   ⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 • 𝐀𝐍𝐓𝐈𝐍𝐔𝐊𝐄
-╚═══━─━─━─━─━─━─━═══╝
-🚨 RETROCESSIONE SOSPETTA
-
-🔒 Gruppo chiuso per sicurezza.
-👑 Owner avvisati.
-━━━━━━━━━━━━━━━━━━`,
-        contextInfo: {
-          mentionedJid: [promoter, demoted, ...BOT_OWNERS],
-        },
-      });
-
-      return true;
-    }
-
-  } catch (e) {
-    console.error('Errore AntiNuke:', e);
+    const metadata = await conn.groupMetadata(m.chat);
+    founderJid = metadata.owner;
+  } catch {
+    founderJid = null;
   }
 
-  return true;
-}
+  const allowed = [
+    botJid,
+    ...BOT_OWNERS,
+    ...registeredAdmins,
+    founderJid
+  ].filter(Boolean);
+
+  if (allowed.includes(sender)) return;
+
+  const usersToDemote = participants
+    .filter(p => p.admin)
+    .map(p => p.jid)
+    .filter(jid => jid && !allowed.includes(jid));
+
+  if (!usersToDemote.length) return;
+
+  await conn.groupParticipantsUpdate(
+    m.chat,
+    usersToDemote,
+    'demote'
+  );
+
+  await conn.groupSettingUpdate(m.chat, 'announcement');
+
+  const action = m.messageStubType === 29 ? 'Tentativo di Promozione' : 'Tentativo di Retrocessione';
+
+  const groupName = m.pushName || 'GRUPPO NΞXSUS';
+
+  const text = `
+⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 𝚩𝚯𝐓 — PROTOCOLLO ANTI-NUKE ⚡
+
+════════════════════
+🚨 AZIONE NON AUTORIZZATA RILEVATA
+════════════════════
+👤 @${sender.split('@')[0]} ha tentato di eseguire una ${action} senza permessi.
+
+☠️ AMMINISTRATORI DEMOTATI:
+${usersToDemote.map(j => `💀 @${j.split('@')[0]}`).join('\n')}
+
+🔒 GRUPPO: *${groupName.toUpperCase()}* messo in modalità sicurezza temporanea.
+
+👑 OWNER AVVISATI:
+${BOT_OWNERS.map(x => `🛡️ @${x.split('@')[0]}`).join('\n')}
+
+════════════════════
+🛡️ SISTEMA DI DIFESA NΞXSUS ATTIVO
+_Il protocollo ha neutralizzato la minaccia. Ritenta solo se vuoi essere eliminato dal Nexus._
+════════════════════
+`.trim();
+
+  await conn.sendMessage(m.chat, {
+    text,
+    contextInfo: {
+      mentionedJid: [...usersToDemote, ...BOT_OWNERS].filter(Boolean),
+    },
+  });
+};
+
+export default handler;
