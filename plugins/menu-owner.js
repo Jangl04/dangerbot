@@ -30,7 +30,21 @@ const handler = async (message, { conn, usedPrefix = '.' }) => {
  Autorità massima attiva
 `.trim();
 
-    await conn.sendMessage(message.chat, { text: menuText });
+    const buttons = [
+        { buttonId: `${usedPrefix}menu`, buttonText: { displayText: '🏠 Menu Principale' }, type: 1 },
+        { buttonId: `${usedPrefix}menuadmin`, buttonText: { displayText: '🛡 Menu Admin' }, type: 1 },
+        { buttonId: `${usedPrefix}menumod`, buttonText: { displayText: '🫅🏻 Moderazione' }, type: 1 },
+        { buttonId: `${usedPrefix}menufunzioni`, buttonText: { displayText: '🚨 Funzioni' }, type: 1 },
+        { buttonId: `${usedPrefix}menugiochi`, buttonText: { displayText: '🎮 Giochi' }, type: 1 },
+        { buttonId: `${usedPrefix}menuludopatici`, buttonText: { displayText: '📱 Area Digitale' }, type: 1 }
+    ];
+
+    await conn.sendMessage(message.chat, {
+        text: menuText,
+        footer: '⚡ Danger Bot • Pannello Owner',
+        buttons: buttons,
+        headerType: 1
+    });
 };
 
 handler.help = ['menuowner'];
