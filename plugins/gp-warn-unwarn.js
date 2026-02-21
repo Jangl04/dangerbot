@@ -83,7 +83,7 @@ END:VCARD`
   }
 
   // ================= RESETWARN =================
-  if (command === 'resetwarn') {
+  if (command === 'clearwarn') {
     if (user.warn === 0) return m.reply('ℹ️ L’utente non ha warn da resettare.')
     user.warn = 0
     await conn.reply(
@@ -106,8 +106,8 @@ END:VCARD`
   }
 }
 
-handler.help = ['warn', 'ammonisci', 'unwarn', 'delwarn', 'resetwarn', 'listwarn']
-handler.command = ['warn', 'ammonisci', 'unwarn', 'delwarn', 'resetwarn', 'listwarn']
+handler.help = ['warn', 'ammonisci', 'unwarn', 'delwarn', 'clearwarn', 'listwarn']
+handler.command = ['warn', 'ammonisci', 'unwarn', 'delwarn', 'clearwarn', 'listwarn']
 handler.group = true
 handler.admin = true
 handler.botAdmin = true
