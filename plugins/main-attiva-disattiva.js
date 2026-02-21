@@ -497,3 +497,115 @@ const ownerFeatures = [
         result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
         result.success = true;
         break;
+
+        case 'vocali':
+        case 'siri':
+        if (!m.isGroup && !isOwner) {
+          result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+          break;
+        }
+        if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.vocali === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.vocali = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'subbots':
+        if (!isOwner && !isROwner) {
+          result.status = '『 ❌ 』 Richiede privilegi di proprietario';
+          break;
+        }
+        if (bot.jadibotmd === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        bot.jadibotmd = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'detect':
+      case 'rileva':  
+        if (!m.isGroup && !isOwner) {
+          result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+          break;
+        }
+        if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.rileva === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.rileva = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+case 'antinuke':
+        if (!isOwner && !isROwner) {
+          result.status = '『 ❌ 』 Richiede privilegi di proprietario';
+          break;
+        }
+        if (chat.antinuke=== isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antinuke = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antilink':
+      case 'nolink':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antiLink === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antiLink = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+      default:
+        result.status = '『 ❌ 』 Comando non riconosciuto';
+        break;
+    }
+    results.push(result);
+  }
+  let summaryMessage = 🚨 Sistema di sicurezza:\n\n;
+  results.forEach(result => {
+    summaryMessage += `- *\`${result.type}\`*${result.status}`;
+  });
+
+  const fkontak_confirm = {
+    key: { participant: m.sender, remoteJid: '0@s.whatsapp.net', fromMe: false, id: 'BotFunction' },
+    message: { 
+      contactMessage: { 
+        displayName: userName, 
+        vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;${userName};;;\nFN:${userName}\nitem1.X-ABLabel:📱 Cellulare\nitem1.TEL;waid=${m.sender.split('@')[0]}:+${m.sender.split('@')[0]}\nitem2.EMAIL;type=INTERNET:bot@whatsapp.com\nitem2.X-ABLabel:💌 Email\nEND:VCARD`,
+        jpegThumbnail: userProfilePicBuffer
+      }
+    },
+    participant: m.sender
+  };
+
+  await conn.sendMessage(m.chat, { text: summaryMessage, contextInfo: dynamicContextInfo }, { quoted: fkontak_confirm });
+};
+
+handler.help = ['attiva', 'disattiva'];
+handler.tags = ['main'];
+handler.command = ['enable', 'disable', 'attiva', 'disattiva', 'on', 'off'];
+
+export default handler;
