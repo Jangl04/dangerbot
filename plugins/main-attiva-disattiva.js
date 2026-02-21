@@ -1,246 +1,499 @@
-let handler = async (m, { conn, command, args, isAdmin, isOwner, isROwner }) => {
+import fetch from 'node-fetch';
 
-  const isEnable = /attiva|enable|on|1/i.test(command)
-  const chats = global.db.data.chats
-  const settings = global.db.data.settings
+let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isROwner }) => {
+  const userName = m.pushName || 'Utente';
 
-  chats[m.chat] ??= {}
-  settings[conn.user.jid] ??= {}
-
-  const chat = chats[m.chat]
-  const bot = settings[conn.user.jid]
-
-  /* ====== GRAFICA 𝐍𝚵𝑿𝐒𝐔𝐒 ====== */
-  const box = (title, lines) =>
-`╔═══━─━─━─━─━─━─━═══╗
-   ⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 • ${title} ⚡
-╚═══━─━─━─━─━─━─━═══╝
-${lines.map(l => `➤ ${l}`).join('\n')}
-━━━━━━━━━━━━━━━━━━`
-
-  const noAdmin = box('𝐀𝐂𝐂𝐄𝐒𝐒𝐎 𝐍𝐄𝐆𝐀𝐓𝐎', [
-    '⚔️ Solo gli Admin possono evocare questo potere',
-    'Il rituale ti è proibito'
-  ])
-
-  const noOwner = box('𝐏𝐎𝐓𝐄𝐑𝐄 𝐒𝐔𝐏𝐑𝐄𝐌𝐎', [
-    '👑 Solo l’Owner può controllare questa energia',
-    'Autorità insufficiente'
-  ])
-
-  if (!args[0]) {
-    throw box('𝐑𝐈𝐓𝐔𝐀𝐋𝐄 𝐃𝐈 𝐂𝐎𝐌𝐀𝐍𝐃𝐎', [
-      '.attiva <funzione>',
-      '.disattiva <funzione>',
-      '',
-      'Funzioni disponibili:',
-      'antilink, antigore, antiporno, modoadmin',
-      'benvenuto, addio, antiprivato, antibot',
-      'antispam, antinuke, antiinsta, antitelegram',
-      'antitiktok, antitag, antitrava'
-    ])
+  let userProfilePicBuffer;
+  try {
+    const profilePicUrl = await conn.profilePictureUrl(m.sender, 'image');
+    userProfilePicBuffer = await (await fetch(profilePicUrl)).arrayBuffer();
+  } catch (e) {
+    try {
+      userProfilePicBuffer = await (await fetch(global.foto)).arrayBuffer();
+    } catch (e2) {
+      userProfilePicBuffer = Buffer.from([]);
+    }
   }
 
-  let feature = args[0].toLowerCase()
-  let result = ''
-
-  switch (feature) {
-
-    case 'antilink':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antiLink === isEnable)
-        return m.reply(box('🔗 𝐀𝐍𝐓𝐈𝐋𝐈𝐍𝐊', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antiLink = isEnable
-      result = box('🔗 𝐀𝐍𝐓𝐈𝐋𝐈𝐍𝐊', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca portali WhatsApp proibiti del Nexus'
-      ])
-      break
-
-    case 'antiinsta':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antiInsta === isEnable)
-        return m.reply(box('📸 𝐀𝐍𝐓𝐈𝐈𝐍𝐒𝐓𝐀', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antiInsta = isEnable
-      result = box('📸 𝐀𝐍𝐓𝐈𝐈𝐍𝐒𝐓𝐀', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca link Instagram per protezione Nexus'
-      ])
-      break
-
-    case 'antitelegram':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antiTelegram === isEnable)
-        return m.reply(box('✈️ 𝐀𝐍𝐓𝐈𝐓𝐄𝐋𝐄𝐆𝐑𝐀𝐌', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antiTelegram = isEnable
-      result = box('✈️ 𝐀𝐍𝐓𝐈𝐓𝐄𝐋𝐄𝐆𝐑𝐀𝐌', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca link Telegram nel Nexus'
-      ])
-      break
-
-    case 'antitiktok':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antiTiktok === isEnable)
-        return m.reply(box('🎵 𝐀𝐍𝐓𝐈𝐓𝐈𝐊𝐓𝐎𝐊', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antiTiktok = isEnable
-      result = box('🎵 𝐀𝐍𝐓𝐈𝐓𝐈𝐊𝐓𝐎𝐊', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca link TikTok per la sicurezza Nexus'
-      ])
-      break
-
-    case 'antitag':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antiTag === isEnable)
-        return m.reply(box('🏷️ 𝐀𝐍𝐓𝐈𝐓𝐀𝐆', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antiTag = isEnable
-      result = box('🏷️ 𝐀𝐍𝐓𝐈𝐓𝐀𝐆', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca tag e menzioni di massa nel Nexus'
-      ])
-      break
-
-    case 'antinuke':
-      if (!isOwner && !isROwner) return m.reply(noOwner)
-      if (chat.antinuke === isEnable)
-        return m.reply(box('💣 𝐀𝐍𝐓𝐈𝐍𝐔𝐊𝐄', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antinuke = isEnable
-      result = box('💣 𝐀𝐍𝐓𝐈𝐍𝐔𝐊𝐄', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Protezione contro distruzione di massa',
-        isEnable ? '🛡️ Il gruppo è sotto protezione 𝐍𝚵𝑿𝐒𝐔𝐒' : '☠️ Difese abbassate'
-      ])
-      break
-
-    case 'antigore':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antigore === isEnable)
-        return m.reply(box('🚫 𝐀𝐍𝐓𝐈𝐆𝐎𝐑𝐄', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antigore = isEnable
-      result = box('🚫 𝐀𝐍𝐓𝐈𝐆𝐎𝐑𝐄', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Purificazione contenuti violenti del Nexus'
-      ])
-      break
-
-    case 'antiporno':
-    case 'antiporn':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antiporno === isEnable)
-        return m.reply(box('🔞 𝐀𝐍𝐓𝐈𝐏𝐎𝐑𝐍𝐎', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antiporno = isEnable
-      result = box('🔞 𝐀𝐍𝐓𝐈𝐏𝐎𝐑𝐍𝐎', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Purificazione contenuti corrotti del Nexus'
-      ])
-      break
-
-    case 'modoadmin':
-    case 'soloadmin':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.modoadmin === isEnable)
-        return m.reply(box('🛡️ 𝐌𝐎𝐃𝐎 𝐀𝐃𝐌𝐈𝐍', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.modoadmin = isEnable
-      result = box('🛡️ 𝐌𝐎𝐃𝐎 𝐀𝐃𝐌𝐈𝐍', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Solo gli eletti possono usare i comandi Nexus'
-      ])
-      break
-
-    case 'benvenuto':
-    case 'welcome':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.welcome === isEnable)
-        return m.reply(box('👋 𝐑𝐈𝐓𝐔𝐀𝐋𝐄 𝐃𝐈 𝐈𝐍𝐆𝐑𝐄𝐒𝐒𝐎', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.welcome = isEnable
-      result = box('👋 𝐑𝐈𝐓𝐔𝐀𝐋𝐄 𝐃𝐈 𝐈𝐍𝐆𝐑𝐄𝐒𝐒𝐎', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Accoglienza Nexus attiva'
-      ])
-      break
-
-    case 'addio':
-    case 'goodbye':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.goodbye === isEnable)
-        return m.reply(box('🚪 𝐑𝐈𝐓𝐔𝐀𝐋𝐄 𝐃𝐈 𝐔𝐒𝐂𝐈𝐓𝐀', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.goodbye = isEnable
-      result = box('🚪 𝐑𝐈𝐓𝐔𝐀𝐋𝐄 𝐃𝐈 𝐔𝐒𝐂𝐈𝐓𝐀', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Messaggio di congedo Nexus'
-      ])
-      break
-
-    case 'antiprivato':
-      if (!isOwner && !isROwner) return m.reply(noOwner)
-      if (bot.antiprivato === isEnable)
-        return m.reply(box('🔒 𝐀𝐍𝐓𝐈𝐏𝐑𝐈𝐕𝐀𝐓𝐎', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      bot.antiprivato = isEnable
-      result = box('🔒 𝐀𝐍𝐓𝐈𝐏𝐑𝐈𝐕𝐀𝐓𝐎', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca messaggi privati al bot Nexus'
-      ])
-      break
-
-    case 'antibot':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antiBot === isEnable)
-        return m.reply(box('🤖 𝐀𝐍𝐓𝐈𝐁𝐎𝐓', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antiBot = isEnable
-      result = box('🤖 𝐀𝐍𝐓𝐈𝐁𝐎𝐓', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca bot esterni non autorizzati nel Nexus'
-      ])
-      break
-
-    case 'antispam':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antispam === isEnable)
-        return m.reply(box('🛑 𝐀𝐍𝐓𝐈𝐒𝐏𝐀𝐌', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antispam = isEnable
-      result = box('🛑 𝐀𝐍𝐓𝐈𝐒𝐏𝐀𝐌', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Protezione contro spam e flood Nexus'
-      ])
-      break
-
-    case 'antitrava':
-      if (m.isGroup && !(isAdmin || isOwner || isROwner)) return m.reply(noAdmin)
-      if (chat.antitrava === isEnable)
-        return m.reply(box('🧱 𝐀𝐍𝐓𝐈𝐓𝐑𝐀𝐕𝐀', ['Il sigillo è già ' + (isEnable ? 'attivo' : 'disattivo')]))
-
-      chat.antitrava = isEnable
-      result = box('🧱 𝐀𝐍𝐓𝐈𝐓𝐑𝐀𝐕𝐀', [
-        `Stato rituale: ${isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐎'}`,
-        'Blocca messaggi crash e trappole Nexus'
-      ])
-      break
-
-    default:
-      return m.reply(box('❓ 𝐅𝐔𝐍𝐙𝐈𝐎𝐍𝐄 𝐒𝐂𝐎𝐍𝐎𝐒𝐂𝐈𝐔𝐓𝐀', ['Il rituale richiesto non esiste nel Nexus']))
+  let dynamicContextInfo;
+  if (global.fake && global.fake.contextInfo) {
+    dynamicContextInfo = global.fake.contextInfo;
+  } else {
+    dynamicContextInfo = {
+      externalAdReply: {
+        title: "𝖇𝖑𝖔𝖔𝖉𝖇𝖔𝖙",
+        body: "Sistema di gestione funzioni",
+        mediaType: 1,
+        jpegThumbnail: userProfilePicBuffer.length > 0 ? userProfilePicBuffer : null
+      }
+    };
   }
 
-  return m.reply(result)
-}
+  let isEnable = /true|enable|attiva|(turn)?on|1/i.test(command);
+  if (/disable|disattiva|off|0/i.test(command)) isEnable = false;
 
-handler.help = ['attiva', 'disattiva']
-handler.tags = ['group']
-handler.command = ['attiva', '0', 'enable', 'disable', 'on', 'off', '1', 'disattiva']
-handler.group = false
+  global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {};
+  global.db.data.users[m.sender] = global.db.data.users[m.sender] || {};
+  let chat = global.db.data.chats[m.chat];
+  let user = global.db.data.users[m.sender];
+  let bot = global.db.data.settings[conn.user.jid] || {};
 
-export default handler
+  const adminFeatures = [
+  { key: 'welcome', name: '👋 Welcome', desc: 'Messaggio di benvenuto' },
+  { key: 'goodbye', name: '🚪 Addio', desc: 'Messaggio di addio' },
+  { key: 'antispam', name: '🛑 Antispam', desc: 'Antispam' },
+  { key: 'antitoxic', name: '🤬 Antitossici', desc: 'Avverte e rimuove per parolacce/insulti' },
+  { key: 'antiBot', name: '🤖❌ Antibot', desc: 'Rimuove eventuali bot indesiderati' },
+  { key: 'antioneview', name: '👁️‍🗨️ Antiviewonce', desc: 'Antiviewonce' },
+  { key: 'rileva', name: '📡 Rileva', desc: 'Rileva eventi gruppo' },
+  { key: 'antiporn', name: '🔞 Antiporno', desc: 'Antiporno' },
+  { key: 'antigore', name: '🚫 Antigore', desc: 'Antigore' },
+  { key: 'modoadmin', name: '🛡️ Soloadmin', desc: 'Solo gli admin possono usare i comandi' },
+  { key: 'ai', name: '🧠 IA', desc: 'Intelligenza artificiale' },
+  { key: 'vocali', name: '🎤 Siri', desc: 'Risponde con audio agli audio e msg ricevuti' },
+  { key: 'antivoip', name: '📞❌ Antivoip', desc: 'Antivoip' },
+  { key: 'antiLink', name: '🔗❌ Antilink', desc: 'Antilink whatsapp' },
+  { key: 'antiLink2', name: '🌐❌ Antilinksocial', desc: 'Antilink social' },
+  { key: 'reaction', name: '😎 Reazioni', desc: 'Reazioni automatiche' },
+  { key: 'autolevelup', name: '⬆️ Autolivello', desc: 'Messaggio di livello automatico' },
+{ key: 'antitrava', name: 'Antitrava', desc: 'Anti-Trava oppure messaggi lunghi' },
+{ key: 'antinuke', name: 'Antinuke', desc: 'Sicurezza del gruppo' }
+];
+
+const ownerFeatures = [
+  { key: 'antiprivato', name: '🔒 \`Antiprivato\`', desc: 'Blocca chiunque scrive in pv al bot' },
+  { key: 'soloCreatore', name: '👑 Solocreatore', desc: 'Solo il creatore puo usare i comandi' },
+  { key: 'jadibotmd', name: '🧬 Subbots', desc: 'Subbots' },
+  { key: 'read', name: '👀 Lettura', desc: 'Il bot legge automaticamente i messaggi' },
+  { key: 'anticall', name: '❌📞 Antichiamate', desc: 'Rifiuta automaticamente le chiamate' }
+];
+  const createSections = (features) => [
+    {
+      title: 'Attiva',
+      rows: features.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}attiva ${f.key}` }))
+    },
+    {
+      title: 'Disattiva',
+      rows: features.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}disattiva ${f.key}` }))
+    }
+  ];
+
+  if (!args.length) {
+    const adminSections = createSections(adminFeatures);
+    const ownerSections = createSections(ownerFeatures);
+
+    let cards = [];
+    const varebot = 'media/menu/varebot.jpeg';
+    if (isOwner || isROwner) {
+      cards = [
+        {
+          image: { url: varebot },
+          title: '『 👥 』 \`Impostazioni Admin\`',
+          body: '- 〘 🛠️ 〙 *Gestisci le funzioni del gruppo selezionando attiva o disattiva.*',
+          footer: '˗ˏˋ 𝖇𝖑𝖔𝖔𝖉𝖇𝖔𝖙ˎˊ˗',
+          buttons: [
+            {
+              name: 'single_select',
+              buttonParamsJson: JSON.stringify({
+                title: 'Impostazioni gruppo',
+                sections: adminSections
+              })
+            }
+          ]
+        },
+        {
+          image: { url: 'https://i.ibb.co/kVdFLyGL/sam.jpg' },
+          title: '『 👑 』 \`Impostazioni Owner\`',
+          body: '- 〘 🛠️ 〙Gestisci le funzioni proprietario selezionando attiva o disattiva.',
+          footer: '˗ˏˋ 𝖇𝖑𝖔𝖔𝖉𝖇𝖔𝖙 ˎˊ˗',
+          buttons: [
+            {
+              name: 'single_select',
+              buttonParamsJson: JSON.stringify({
+                title: 'Seleziona azione',
+                sections: ownerSections
+              })
+            }
+          ]
+        }
+      ];
+    } else {
+      cards = [
+        { 
+          image: { url: varebot },
+          title: '『 👥 』 \`Impostazioni Admin\`',
+          body: '- 〘 🛠️ 〙 *Gestisci le funzioni del gruppo selezionando attiva o disattiva.*',
+          footer: '˗ˏˋ 𝖇𝖑𝖔𝖔𝖉𝖇𝖔𝖙 ˎˊ˗',
+          buttons: [
+            {
+              name: 'single_select',
+              buttonParamsJson: JSON.stringify({
+                title: 'Impostazioni gruppo',
+                sections: adminSections
+              })
+            }
+          ]
+        }
+      ];
+    }
+
+    const message = {
+      text: '*Sistema di gestione funzioni*',
+      footer: '*─ׄ✦☾⋆⁺₊✧𝖇𝖑𝖔𝖔𝖉𝖇𝖔𝖙 ✧₊⁺⋆☽✦─ׅ⭒*',
+      cards: cards,
+      contextInfo: dynamicContextInfo
+    };
+
+    const fkontak_menu = {
+      key: { participant: m.sender, remoteJid: '0@s.whatsapp.net', fromMe: false, id: 'BotAssistant' },
+      message: {
+        contactMessage: {
+          displayName: userName,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;${userName};;;\nFN:${userName}\nitem1.X-ABLabel:📱 Cellulare\nitem1.TEL;waid=${m.sender.split('@')[0]}:+${m.sender.split('@')[0]}\nitem2.EMAIL;type=INTERNET:bot@whatsapp.com\nitem2.X-ABLabel:💌 Email\nEND:VCARD`,
+          jpegThumbnail: userProfilePicBuffer
+        }
+      },
+      participant: m.sender
+    };
+
+    return conn.sendMessage(m.chat, message, { quoted: fkontak_menu });
+  }
+  let results = [];
+  for (let type of args.map(arg => arg.toLowerCase())) {
+    let result = { type, status: '', success: false };
+
+    switch (type) {
+      case 'welcome':
+      case 'benvenuto':
+        if (!m.isGroup && !isOwner) {
+          result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+          break;
+        }
+        if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.welcome === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.welcome = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'goodbye':
+      case 'addio':
+        if (!m.isGroup && !isOwner) {
+          result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+          break;
+        }
+        if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.goodbye === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.goodbye = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antiprivato':
+      case 'antipriv':
+        if (!isOwner && !isROwner) {
+          result.status = '『 ❌ 』 Richiede privilegi di proprietario';
+          break;
+        }
+        if (bot.antiprivato === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        bot.antiprivato = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'read':
+      case 'lettura':
+        if (!isOwner && !isROwner) {
+          result.status = '『 ❌ 』 Richiede privilegi di proprietario';
+          break;
+        }
+        if (settings.read === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        settings.read = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+        case 'antitrava':
+  if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+    result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+    break;
+  }
+  if (chat.antitrava === isEnable) {
+    result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+    break;
+  }
+  chat.antitrava = isEnable;
+  result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+  result.success = true;
+  break;
+
+      case 'antibot':
+      case 'antibots':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antiBot === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antiBot = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antisubbots':
+      case 'antisub':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antiBot2 === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antiBot2 = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antitoxic':
+      case 'antitossici':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antitoxic === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antitoxic = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antivoip':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antivoip === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antivoip = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'modoadmin':
+      case 'soloadmin':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.modoadmin === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.modoadmin = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'solocreatore':
+      case 'solowner':
+      case 'soloowner':
+        if (!isROwner) {
+          result.status = '『 ❌ 』 Richiede privilegi di proprietario';
+          break;
+        }
+        if (bot.soloCreatore === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        bot.soloCreatore = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+        case 'anticall':
+        if (!isROwner) {
+          result.status = '『 ❌ 』 Richiede privilegi di proprietario';
+          break;
+        }
+        if (settings.anticall === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        settings.anticall = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antioneview':
+      case 'antiviewonce':
+        if (!m.isGroup && !isOwner) {
+          result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+          break;
+        }
+        if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antioneview === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antioneview = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'reaction':
+      case 'reazioni':
+        if (!m.isGroup && !isOwner) {
+          result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+          break;
+        }
+        if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.reaction === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.reaction = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antilinkuni':
+      case 'antilinkuniversale':
+      case 'antilinktutto':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antiLinkUni === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antiLinkUni = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antilink2':
+      case 'antilinkhard':
+      case 'antilinksocial':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antiLink2 === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antiLink2 = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'autolevelup':
+      case 'autolivello':
+      case 'autolvl':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.autolevelup === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.autolevelup = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antispam':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antispam === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antispam = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antiporn':
+      case 'antiporno':
+      case 'antiNSFW':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antiporno === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antiporno = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'antigore':
+        if (m.isGroup && !(isAdmin || isOwner || isROwner)) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.antigore === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.antigore = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
+
+      case 'ia':
+      case 'ai':
+        if (!m.isGroup && !isOwner) {
+          result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+          break;
+        }
+        if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+          result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+          break;
+        }
+        if (chat.ai === isEnable) {
+          result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+          break;
+        }
+        chat.ai = isEnable;
+        result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
+        result.success = true;
+        break;
