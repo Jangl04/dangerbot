@@ -181,6 +181,77 @@ const ownerFeatures = [
         result.status = `『 ✅ 』 ${isEnable ? 'Attivato' : 'Disattivato'}`;
         result.success = true;
         break;
+case 'antinuke':
+    if (!m.isGroup && !isOwner) {
+      result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+      break;
+    }
+    if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+      result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+      break;
+    }
+    if (chat.antinuke === isEnable) {
+      result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+      break;
+    }
+    chat.antinuke = isEnable;
+    result.status = `『 ✅ 』 ${isEnable ? 'Antinuke Attivato' : 'Antinuke Disattivato'}`;
+    result.success = true;
+    break;
+
+  case 'antiinsta':
+    if (!m.isGroup && !isOwner) {
+      result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+      break;
+    }
+    if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+      result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+      break;
+    }
+    if (chat.antiInsta === isEnable) {
+      result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+      break;
+    }
+    chat.antiInsta = isEnable;
+    result.status = `『 ✅ 』 ${isEnable ? 'Anti-Instagram Attivo' : 'Anti-Instagram Disattivato'}`;
+    result.success = true;
+    break;
+
+  case 'antitelegram':
+    if (!m.isGroup && !isOwner) {
+      result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+      break;
+    }
+    if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+      result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+      break;
+    }
+    if (chat.antiTelegram === isEnable) {
+      result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+      break;
+    }
+    chat.antiTelegram = isEnable;
+    result.status = `『 ✅ 』 ${isEnable ? 'Anti-Telegram Attivo' : 'Anti-Telegram Disattivato'}`;
+    result.success = true;
+    break;
+
+  case 'antitiktok':
+    if (!m.isGroup && !isOwner) {
+      result.status = '『 ❌ 』 Comando valido solo nei gruppi';
+      break;
+    }
+    if (m.isGroup && !isAdmin && !isOwner && !isROwner) {
+      result.status = '\n- 〘 🛠️ 〙 *`ꪶ͢Solo gli admin del gruppo possono usare questo comandoꫂ`*';
+      break;
+    }
+    if (chat.antiTiktok === isEnable) {
+      result.status = `『 ⚠️ 』 Già ${isEnable ? 'attivo' : 'disattivato'}`;
+      break;
+    }
+    chat.antiTiktok = isEnable;
+    result.status = `『 ✅ 』 ${isEnable ? 'Anti-TikTok Attivo' : 'Anti-TikTok Disattivato'}`;
+    result.success = true;
+    break;
 
       case 'goodbye':
       case 'addio':
