@@ -1,6 +1,5 @@
 let handler = async (m, { conn, command, args, isAdmin, isOwner, isROwner }) => {
 
-  // ✅ Controllo attivazione / disattivazione
   const isEnable = /^(attiva|enable|on|1)$/i.test(command)
 
   const chats = global.db.data.chats
@@ -12,7 +11,19 @@ let handler = async (m, { conn, command, args, isAdmin, isOwner, isROwner }) => 
   const chat = chats[m.chat]
   const bot = settings[conn.user.jid]
 
-  /* ====== GRAFICA 𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓 ====== */
+  const features = [
+    'antiLink','antiInsta','antiTelegram','antiTiktok','antiTag','antinuke',
+    'antigore','antiporno','modoadmin','welcome','goodbye','antiBot','antispam',
+    'antiprivato','antitrava'
+  ]
+  for (let f of features) {
+    if (f.startsWith('anti') || f === 'modoadmin' || f === 'welcome' || f === 'goodbye') {
+      chat[f] ??= false
+    } else {
+      bot[f] ??= false
+    }
+  }
+
   const box = (title, lines) =>
 `╔══════════════════════╗
    ☠️ 𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓 • ${title} ☠️
@@ -199,6 +210,6 @@ ${lines.map(l => `➤ ${l}`).join('\n')}
 handler.help = ['attiva', 'disattiva']
 handler.tags = ['group']
 handler.command = ['attiva', 'disattiva', 'enable', 'disable', 'on', 'off', '1', '0']
-handler.group = false
+handler.group = true
 
 export default handler
