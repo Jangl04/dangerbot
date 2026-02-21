@@ -39,14 +39,14 @@ export async function before(m, { isAdmin, isPrems, isBotAdmin, conn }) {
 
       await conn.sendMessage(m.chat, {
         text: `╔═══━─━─━─━─━─━─━═══╗
-   ⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 • 𝐀𝐍𝐓𝐈𝐈𝐍𝐒𝐓𝐀
+   ⚡ 𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓 • 𝐀𝐍𝐓𝐈𝐈𝐍𝐒𝐓𝐀
 ╚═══━─━─━─━─━─━─━═══╝
 📡 LINK INSTAGRAM RILEVATO
 
 ⚠️ Avvertimento: ${warnCount}/${warnLimit}
 🔹 Rimangono: ${remaining}
 
-Prossima violazione → espulsione dal Nexus.
+Prossima violazione → espulsione.
 ━━━━━━━━━━━━━━━━━━`
       });
 
@@ -57,11 +57,11 @@ Prossima violazione → espulsione dal Nexus.
 
       await conn.sendMessage(m.chat, {
         text: `╔═══━─━─━─━─━─━─━═══╗
-   ⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 • 𝐏𝐔𝐍𝐈𝐙𝐈𝐎𝐍𝐄
+   ⚡ 𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓 • 𝐏𝐔𝐍𝐈𝐙𝐈𝐎𝐍𝐄
 ╚═══━─━─━─━─━─━─━═══╝
 💀 LIMITE SUPERATO
 
-🔹 Utente rimosso dal Nexus.
+🔹 Utente rimosso dal Gruppo.
 ━━━━━━━━━━━━━━━━━━`
       });
 
