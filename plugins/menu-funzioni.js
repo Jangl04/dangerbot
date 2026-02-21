@@ -1,10 +1,17 @@
-const menuText = `
-☣️ 𝐍ΞXSUS – 𝐏𝐑𝐎𝐓𝐎𝐂𝐎𝐋𝐋𝐎 𝐒𝐈𝐂𝐔𝐑𝐄𝐙𝐙𝐀 ☣️
+const handler = async (m, { conn, usedPrefix = '.' }) => {
+
+  const chat = global.db.data.chats[m.chat] || {}
+  const bot = global.db.data.settings[conn.user.jid] || {}
+
+  const stato = (v) => v ? '🟢 ATTIVO' : '🔴 DISATTIVO'
+
+  const menuText = `
+☣️ 𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓 – 𝐏𝐑𝐎𝐓𝐎𝐂𝐎𝐋𝐋𝐎 𝐒𝐈𝐂𝐔𝐑𝐄𝐙𝐙𝐀 ☣️
 ════════════════════
 
 ⚙️ 𝐀𝐓𝐓𝐈𝐕𝐀𝐙𝐈𝐎𝐍𝐄 𝐌𝐎𝐃𝐔𝐋𝐈
-➤ ${usedPrefix}attiva <funzione> 🟢
-➤ ${usedPrefix}disattiva <funzione> 🔴
+➤ ${usedPrefix}1/on <funzione> 🟢
+➤ ${usedPrefix}0/off <funzione> 🔴
 
 ════════════════════
 🛡️ 𝐒𝐂𝐔𝐃𝐎 𝐏𝐑𝐎𝐓𝐄𝐙𝐈𝐎𝐍𝐄
@@ -34,5 +41,15 @@ const menuText = `
 ➤ 🔒 AntiPrivato    → ${stato(bot.antiprivato)}
 
 ════════════════════
+⚠️ Sistema monitorato.
 🔻 Livello sicurezza dinamico.
 `.trim()
+
+  await conn.sendMessage(m.chat, { text: menuText })
+}
+
+handler.help = ['menusicurezza', 'funzioni']
+handler.tags = ['menu']
+handler.command = /^(menufunzioni)$/i
+
+export default handler
