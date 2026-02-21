@@ -12,34 +12,37 @@ const handler = async (message, { conn, usedPrefix = '.' }) => {
 
     const totalUsers = Object.keys(global.db?.data?.users || {}).length;
 
- const menuText = `
+    const menuText = `
 ╔═════════════╗
      𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓 
      CONTROL PANEL
 ╚═════════════╝
 
-👤 Utente: ${userName}
+👤 Utente: @${userId.split('@')[0]}
 ⏳ Online da: ${uptimeStr}
 👥 Utenti registrati: ${totalUsers}
 
 ━━━━━━━━━━━━━━━
 ⚠ SISTEMA OPERATIVO ATTIVO
 ━━━━━━━━━━━━━━━
-
-🛡 .menuadmin  → Accesso amministrazione
-👑 .menuowner  → Controllo proprietario
-🎮 .menugiochi  → Area intrattenimento
-🫅🏻 .menumod    → Strumenti moderazione
-🚨 .menufunzioni   → Funzioni operative
-📱 .menuludopatici   → Area digitale
-
-━━━━━━━━━━━━━━━━━
+Seleziona un pannello qui sotto 👇
 `.trim();
 
-    // INVIO SOLO TESTO
-    await conn.sendMessage(message.chat, { 
+    const buttons = [
+        { buttonId: `${usedPrefix}menuadmin`, buttonText: { displayText: '🛡 Menu Admin' }, type: 1 },
+        { buttonId: `${usedPrefix}menuowner`, buttonText: { displayText: '👑 Menu Owner' }, type: 1 },
+        { buttonId: `${usedPrefix}menumod`, buttonText: { displayText: '🫅🏻 Moderazione' }, type: 1 },
+        { buttonId: `${usedPrefix}menufunzioni`, buttonText: { displayText: '🚨 Funzioni' }, type: 1 },
+        { buttonId: `${usedPrefix}menugiochi`, buttonText: { displayText: '🎮 Giochi' }, type: 1 },
+        { buttonId: `${usedPrefix}menuludopatici`, buttonText: { displayText: '📱 Area Digitale' }, type: 1 }
+    ];
+
+    await conn.sendMessage(message.chat, {
         text: menuText,
-        mentions: [userId] // menziona l’utente per il benvenuto
+        footer: '⚡ Danger Bot System',
+        buttons: buttons,
+        headerType: 1,
+        mentions: [userId]
     });
 };
 
