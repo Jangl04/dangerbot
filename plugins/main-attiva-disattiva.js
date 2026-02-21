@@ -240,7 +240,7 @@ ${lines.map(l => `➤ ${l}`).join('\n')}
 
 handler.help = ['attiva', 'disattiva']
 handler.tags = ['group']
-handler.command = ['attiva', 'o', 'enable', 'disable', 'on', 'off', '1', 'disattiva']
+handler.command = ['attiva', '0', 'enable', 'disable', 'on', 'off', '1', 'disattiva']
 handler.group = false
 
 export default handler
