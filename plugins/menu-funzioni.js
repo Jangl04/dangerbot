@@ -17,7 +17,7 @@ const handler = async (m, { conn, usedPrefix = '.' }) => {
 🛡️ 𝐒𝐂𝐔𝐃𝐎 𝐏𝐑𝐎𝐓𝐄𝐙𝐈𝐎𝐍𝐄
 ➤ 🔗 AntiLink       → ${stato(chat.antiLink)}
 ➤ 🧱 AntiTrava      → ${stato(chat.antitrava)}
-➤ 💣 AntiNuke       → ${stato(chat.antinuke)}
+➤ 💣 AntiNuke       → ${stato(chat.antiNuke)}
 ➤ 🛑 AntiSpam       → ${stato(chat.antispam)}
 ➤ 🤖 AntiBot        → ${stato(chat.antiBot)}
 ➤ 📸 AntiInsta      → ${stato(chat.antiInsta)}
@@ -45,10 +45,24 @@ const handler = async (m, { conn, usedPrefix = '.' }) => {
 🔻 Livello sicurezza dinamico.
 `.trim()
 
-  await conn.sendMessage(m.chat, { text: menuText })
+  const buttons = [
+    { buttonId: `${usedPrefix}menu`, buttonText: { displayText: '🏠 Menu Principale' }, type: 1 },
+    { buttonId: `${usedPrefix}menuadmin`, buttonText: { displayText: '🛡 Menu Admin' }, type: 1 },
+    { buttonId: `${usedPrefix}menuowner`, buttonText: { displayText: '👑 Menu Owner' }, type: 1 },
+    { buttonId: `${usedPrefix}menumod`, buttonText: { displayText: '🫅🏻 Moderazione' }, type: 1 },
+    { buttonId: `${usedPrefix}menugiochi`, buttonText: { displayText: '🎮 Giochi' }, type: 1 },
+    { buttonId: `${usedPrefix}menuludopatici`, buttonText: { displayText: '📱 Area Digitale' }, type: 1 }
+  ]
+
+  await conn.sendMessage(m.chat, {
+    text: menuText,
+    footer: '⚡ Danger Bot • Pannello Sicurezza',
+    buttons,
+    headerType: 1
+  })
 }
 
-handler.help = ['menusicurezza', 'funzioni']
+handler.help = ['menufunzioni']
 handler.tags = ['menu']
 handler.command = /^(menufunzioni)$/i
 
