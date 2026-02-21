@@ -23,8 +23,21 @@ const handler = async (message, { conn, usedPrefix = '.' }) => {
 🔖 Versione: 1.0
 `.trim();
 
-    // INVIO SOLO TESTO
-    await conn.sendMessage(message.chat, { text: menuText });
+    const buttons = [
+        { buttonId: `${usedPrefix}menu`, buttonText: { displayText: '🏠 Menu Principale' }, type: 1 },
+        { buttonId: `${usedPrefix}menuadmin`, buttonText: { displayText: '🛡 Menu Admin' }, type: 1 },
+        { buttonId: `${usedPrefix}menuowner`, buttonText: { displayText: '👑 Menu Owner' }, type: 1 },
+        { buttonId: `${usedPrefix}menumod`, buttonText: { displayText: '🫅🏻 Moderazione' }, type: 1 },
+        { buttonId: `${usedPrefix}menufunzioni`, buttonText: { displayText: '🚨 Funzioni' }, type: 1 },
+        { buttonId: `${usedPrefix}menugiochi`, buttonText: { displayText: '🎮 Giochi' }, type: 1 }
+    ];
+
+    await conn.sendMessage(message.chat, {
+        text: menuText,
+        footer: '⚡ Danger Bot • Zona Azzardo',
+        buttons: buttons,
+        headerType: 1
+    });
 };
 
 handler.help = ['menuludopatici'];
