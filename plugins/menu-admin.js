@@ -1,7 +1,6 @@
 const handler = async (message, { conn, usedPrefix = '.' }) => {
 
     const menuText = `
-const menuText = `
 ☣️ 𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓 – 𝐀𝐃𝐌𝐈𝐍 𝐂𝐎𝐍𝐓𝐑𝐎𝐋 ☣️
 
 ════════════════════
