@@ -18,8 +18,8 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       if (!img) return conn.reply(m.chat, '『 📸 』- `Per favore, invia un\'immagine, video o GIF per creare uno sticker.`', m);
 
       try {
-        const packName = global.authsticker || '𝐍𝚵𝑿𝐒𝐔𝐒 𝚩𝚯𝐓';
-        const authorName = global.nomepack || '𝐍𝚵𝑿𝐒𝐔𝐒 𝚩𝚯𝐓';
+        const packName = global.authsticker || '𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓';
+        const authorName = global.nomepack || '𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓';
         if (!global.support) {
           global.support = {
             ffmpeg: true,
@@ -45,8 +45,8 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
           }
 
           if (typeof out === 'string') {
-            const packName = global.authsticker || '𝐍𝚵𝑿𝐒𝐔𝐒';
-            const authorName = global.nomepack || '𝐍𝚵𝑿𝐒𝐔𝐒';
+            const packName = global.authsticker || '𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓';
+            const authorName = global.nomepack || '𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓';
             stiker = await sticker(false, out, packName, authorName);
           }
         } catch (uploadError) {
@@ -56,8 +56,8 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       }
     } else if (args[0]) {
       if (isUrl(args[0])) {
-        const packName = global.authsticker || '𝐍𝚵𝑿𝐒𝐔𝐒';
-        const authorName = global.nomepack || '𝐍𝚵𝑿𝐒𝐔𝐒';
+        const packName = global.authsticker || '𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓';
+        const authorName = global.nomepack || '𝐃𝐀𝐍𝐆𝐄𝐑 𝐁𝐎𝐓';
         if (!global.support) {
           global.support = {
             ffmpeg: true,
