@@ -57,9 +57,6 @@ handler.before = async function (m, { conn, participants, isBotAdmin }) {
   const groupName = m.pushName || 'GRUPPO NΞXSUS';
 
   const text = `
-⚡ 𝐍𝚵𝑿𝐒𝐔𝐒 𝚩𝚯𝐓 — PROTOCOLLO ANTI-NUKE ⚡
-
-════════════════════
 🚨 AZIONE NON AUTORIZZATA RILEVATA
 ════════════════════
 👤 @${sender.split('@')[0]} ha tentato di eseguire una ${action} senza permessi.
@@ -67,14 +64,10 @@ handler.before = async function (m, { conn, participants, isBotAdmin }) {
 ☠️ AMMINISTRATORI DEMOTATI:
 ${usersToDemote.map(j => `💀 @${j.split('@')[0]}`).join('\n')}
 
-🔒 GRUPPO: *${groupName.toUpperCase()}* messo in modalità sicurezza temporanea.
+🔒 gruppo messo in modalità sicurezza temporanea.
 
 👑 OWNER AVVISATI:
 ${BOT_OWNERS.map(x => `🛡️ @${x.split('@')[0]}`).join('\n')}
-
-════════════════════
-🛡️ SISTEMA DI DIFESA NΞXSUS ATTIVO
-_Il protocollo ha neutralizzato la minaccia. Ritenta solo se vuoi essere eliminato dal Nexus._
 ════════════════════
 `.trim();
 
