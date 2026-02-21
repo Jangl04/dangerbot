@@ -1,6 +1,6 @@
 let handler = async (m, { conn, command, args, isAdmin, isOwner, isROwner }) => {
 
-  const isEnable = /^(attiva|enable|on|1)$/i.test(command)
+  const isEnable = /attiva|enable|on|1/i.test(command)
   const chats = global.db.data.chats
   const settings = global.db.data.settings
 
@@ -240,7 +240,7 @@ ${lines.map(l => `➤ ${l}`).join('\n')}
 
 handler.help = ['attiva', 'disattiva']
 handler.tags = ['group']
-handler.command = ['attiva', 'disattiva', 'enable', 'disable', 'on', 'off', '1', '0']
+handler.command = ['attiva', 'o', 'enable', 'disable', 'on', 'off', '1', 'disattiva']
 handler.group = false
 
 export default handler
