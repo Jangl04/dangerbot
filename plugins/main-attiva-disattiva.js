@@ -1,6 +1,6 @@
 let handler = async (m, { conn, command, args, isAdmin, isOwner, isROwner }) => {
 
-  const isEnable = /attiva|enable|on|1/i.test(command)
+  const isEnable = /^(attiva|enable|on|1)$/i.test(command)
   const chats = global.db.data.chats
   const settings = global.db.data.settings
 
