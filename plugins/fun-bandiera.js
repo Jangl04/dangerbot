@@ -151,10 +151,11 @@ handler.before = async (m,{conn})=>{
 
     await conn.sendMessage(chat,{
       text:
-`🏆 *CORRETTO!*
+`🏆 *CORRETTO!* 🏆
 🌍 ${game.flag.emoji}
-🎯 ${game.flag.answers[0].toUpperCase()}
-🔥 Punti: *${global.bandieraEmojiLeaderboard[chat][m.sender]}*`,
+🎯 Risposta: *${game.flag.answers[0].toUpperCase()}*
+🔥 Vincitore: *@${m.sender.split('@')[0]}*
+💎 Punti totali: *${global.bandieraEmojiLeaderboard[chat][m.sender]}*`,
       mentions:[m.sender]
     })
     delete global.bandieraEmojiGame[chat]
