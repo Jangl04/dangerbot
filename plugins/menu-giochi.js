@@ -1,8 +1,6 @@
 const handler = async (message, { conn, usedPrefix = '.' }) => {
 
     const userId = message.sender;
-    const groupId = message.isGroup ? message.chat : null;
-
     const userCount = Object.keys(global.db?.data?.users || {}).length;
 
     const menuText = `
@@ -61,8 +59,21 @@ const handler = async (message, { conn, usedPrefix = '.' }) => {
 ⚡ Entra. Gioca. Sopravvivi.
 `.trim();
 
-    // INVIO SOLO TESTO
-    await conn.sendMessage(message.chat, { text: menuText });
+    const buttons = [
+        { buttonId: `${usedPrefix}menu`, buttonText: { displayText: '🏠 Menu Principale' }, type: 1 },
+        { buttonId: `${usedPrefix}menuadmin`, buttonText: { displayText: '🛡 Menu Admin' }, type: 1 },
+        { buttonId: `${usedPrefix}menuowner`, buttonText: { displayText: '👑 Menu Owner' }, type: 1 },
+        { buttonId: `${usedPrefix}menumod`, buttonText: { displayText: '🫅🏻 Moderazione' }, type: 1 },
+        { buttonId: `${usedPrefix}menufunzioni`, buttonText: { displayText: '🚨 Funzioni' }, type: 1 },
+        { buttonId: `${usedPrefix}menuludopatici`, buttonText: { displayText: '📱 Area Digitale' }, type: 1 }
+    ];
+
+    await conn.sendMessage(message.chat, {
+        text: menuText,
+        footer: '⚡ Danger Bot • Arena Giochi',
+        buttons: buttons,
+        headerType: 1
+    });
 };
 
 handler.help = ['menugiochi'];
