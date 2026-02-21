@@ -10,8 +10,8 @@ const handler = async (m, { conn, usedPrefix = '.' }) => {
 ════════════════════
 
 ⚙️ 𝐀𝐓𝐓𝐈𝐕𝐀𝐙𝐈𝐎𝐍𝐄 𝐌𝐎𝐃𝐔𝐋𝐈
-➤ ${usedPrefix}1/on <funzione> 🟢
-➤ ${usedPrefix}0/off <funzione> 🔴
+➤ ${usedPrefix}1 <funzione> 🟢
+➤ ${usedPrefix}0 <funzione> 🔴
 
 ════════════════════
 🛡️ 𝐒𝐂𝐔𝐃𝐎 𝐏𝐑𝐎𝐓𝐄𝐙𝐈𝐎𝐍𝐄
