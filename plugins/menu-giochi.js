@@ -44,6 +44,8 @@ const handler = async (message, { conn, usedPrefix = '.' }) => {
 ➤ ${usedPrefix}s / sticker 🏷️
 ➤ ${usedPrefix}wm 🔮
 ➤ ${usedPrefix}cur 🎶
+➤ ${usedPrefix}dox 🖊️
+➤ ${usedPrefix}pic 📸
 
 ════════════════════
 💍 𝐑𝐄𝐋𝐀𝐙𝐈𝐎𝐍𝐈
