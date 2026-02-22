@@ -1,4 +1,4 @@
-// nuke.js — Sistema Operativo DANGER BOT
+// Plugin fatto da Luxifer - mod by deadly
 
 const handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
   if (!m.isGroup) return m.reply('⚠️ Questo comando può essere usato solo nei gruppi.')
