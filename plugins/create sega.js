@@ -6,7 +6,7 @@
 
   for (let item of array) {
     await conn.sendMessage(m.chat, { text: `${item}`, edit: key }, { quoted: m });
-    await new Promise(resolve => setTimeout(resolve, 200)); // Delay di 2 secondi per prevenirlo ma nulla
+    await new Promise(resolve => setTimeout(resolve, 100)); // Delay di 1 secondi per prevenirlo ma nulla
   }
   return conn.sendMessage(m.chat, { text: `Oh, finalmente mi hai fatto venire  💦`.trim() , edit: key, mentions: [m.sender] }, { quoted: m });
 };
