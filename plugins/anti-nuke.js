@@ -2,8 +2,8 @@ const handler = m => m;
 
 // Lista utenti autorizzati
 const registeredAdmins = [
-  '@s.whatsapp.net',
-  '@s.whatsapp.net',
+  '212781816909@s.whatsapp.net',
+  '390935931875@s.whatsapp.net',
 ];
 
 handler.before = async function (m, { conn, participants, isBotAdmin }) {
