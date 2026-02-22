@@ -54,7 +54,7 @@ handler.before = async function (m, { conn, participants, isBotAdmin }) {
 
   const action = m.messageStubType === 29 ? 'Tentativo di Promozione' : 'Tentativo di Retrocessione';
 
-  const groupName = m.pushName || 'GRUPPO NΞXSUS';
+  const groupName = m.pushName || 'GRUPPO THE DANGER';
 
   const text = `
 🚨 AZIONE NON AUTORIZZATA RILEVATA
