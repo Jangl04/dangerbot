@@ -17,7 +17,7 @@ global.luxifer = ['212781816909',]
 global.owner = [
   ['212781816909', 'luxifer', true],
   ['16093013226', 'mrciao', true], 
-  ['639753512076' 'anna', true], 
+  ['639753512076', 'anna', true], 
 ]
 global.mods = ['212781816909', '390935931875']
 global.prems = ['212781816909', '390935931875']
