@@ -17,7 +17,7 @@ global.luxifer = ['212781816909',]
 global.owner = [
   ['212781816909', 'luxifer', true],
   ['16093013226', 'mrciao', true], 
-  ['639753512076', 'anna', true], 
+  ['212774372343', 'anna', true], 
   ['390935931875', 'tom', true], 
   ['23673333330', 'tom', true], 
 ]
